@@ -1,0 +1,8 @@
+{
+  "name": "SkillGo",
+  "description": "SkillGo career-tech platform for skill-to-job vocational training, interactive learning modules, hands-on practicals, and verifiable certification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
