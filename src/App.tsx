@@ -226,17 +226,17 @@ function AppLayout() {
                 </span>
               </div>
 
-              {/* Cart Button with Dynamic Badge Count (Desktop) */}
+              {/* Cart Button with Dynamic Badge Count (Visible on all mobile & desktop viewports) */}
               <button
                 onClick={() => setCartModalOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer select-none"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-all cursor-pointer select-none shrink-0"
                 id="header-cart-btn"
                 title="View Cart"
               >
-                <ShoppingBag className="w-4 h-4 text-slate-800" />
-                <span>Cart</span>
+                <ShoppingBag className="w-4 h-4 text-slate-800 shrink-0" />
+                <span className="hidden min-[380px]:inline text-xs sm:text-sm font-bold">Cart</span>
                 {itemCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black leading-none animate-in zoom-in">
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black leading-none animate-in zoom-in shrink-0">
                     {itemCount}
                   </span>
                 )}
