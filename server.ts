@@ -47,13 +47,15 @@ async function startServer() {
       const salt = String(rawSalt).trim();
       const payuActionUrl = String(rawActionUrl).trim();
 
-      if (!txnid || amount === undefined || amount === null || !productinfo || !firstname) {
+      if (amount === undefined || amount === null || !productinfo || !firstname) {
         return res.status(400).json({ 
-          error: 'Missing required parameters: txnid, amount, productinfo, and firstname are mandatory.' 
+          error: 'Missing required parameters: amount, productinfo, and firstname are mandatory.' 
         });
       }
 
-      const cleanTxnid = String(txnid).trim();
+      const cleanTxnid = (txnid && String(txnid).trim().length > 0)
+        ? String(txnid).trim()
+        : `SG_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
       const numAmount = parseFloat(String(amount));
       if (isNaN(numAmount) || numAmount <= 0) {
         return res.status(400).json({ error: 'Invalid amount supplied.' });

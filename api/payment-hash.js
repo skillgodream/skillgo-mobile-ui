@@ -57,14 +57,16 @@ export default async function handler(req, res) {
     const payuActionUrl = String(rawActionUrl).trim();
 
     // 2. Validate mandatory parameters
-    if (!txnid || amount === undefined || amount === null || !productinfo || !firstname) {
+    if (amount === undefined || amount === null || !productinfo || !firstname) {
       return res.status(400).json({ 
-        error: 'Missing required parameters: txnid, amount, productinfo, and firstname are mandatory.' 
+        error: 'Missing required parameters: amount, productinfo, and firstname are mandatory.' 
       });
     }
 
     // 3. Clean and sanitize all parameter values to guarantee identical representation in hash & form
-    const cleanTxnid = String(txnid).trim();
+    const cleanTxnid = (txnid && String(txnid).trim().length > 0)
+      ? String(txnid).trim()
+      : `SG_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
     
     // Amount must strictly be a 2-decimal number string (e.g., "199.00", "29.00")
     const numAmount = parseFloat(String(amount));

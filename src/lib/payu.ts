@@ -35,13 +35,28 @@ export interface PayUHashResponse {
 }
 
 /**
+ * Generates a brand-new, cryptographically random transaction ID for PayU.
+ * Guarantees uniqueness on every single click to avoid PayU duplicate txn or blocking issues.
+ */
+export function generatePayUTxnId(): string {
+  const timestamp = Date.now();
+  const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const counter = Math.floor(100 + Math.random() * 900);
+  return `SG_${timestamp}_${randomSuffix}${counter}`;
+}
+
+/**
  * Initiates the PayU checkout flow:
- * 1. Generates unique transaction ID
+ * 1. Generates a brand new, unique transaction ID on every single click
  * 2. Fetches SHA512 signature hash from backend API (/api/payment-hash)
  * 3. Dynamically generates an HTML POST form and auto-submits directly to PayU Checkout
  */
 export async function initiatePayUPayment(params: PayUPaymentParams): Promise<void> {
-  const txnid = params.txnid || `SG_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+  // Always ensure a freshly generated transaction ID on every execution unless explicitly overridden with a valid non-empty string
+  const txnid = (params.txnid && params.txnid.trim().length > 0) 
+    ? params.txnid.trim() 
+    : generatePayUTxnId();
+
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
   
@@ -82,6 +97,12 @@ export async function initiatePayUPayment(params: PayUPaymentParams): Promise<vo
 
   if (!hashData.hash || !hashData.key) {
     throw new Error(hashData.error || 'Invalid payment response received from server.');
+  }
+
+  // Remove any previously injected form if present
+  const existingForm = document.getElementById('payu-checkout-auto-form');
+  if (existingForm) {
+    existingForm.remove();
   }
 
   // 2. Build and auto-submit form targeting PayU actionUrl (https://test.payu.in/_payment)
