@@ -1,5 +1,3 @@
-import crypto from 'crypto';
-
 export interface PayUPaymentParams {
   txnid?: string;
   amount: number;
@@ -7,6 +5,11 @@ export interface PayUPaymentParams {
   firstname: string;
   email?: string;
   phone?: string;
+  udf1?: string;
+  udf2?: string;
+  udf3?: string;
+  udf4?: string;
+  udf5?: string;
   surl?: string;
   furl?: string;
 }
@@ -20,6 +23,11 @@ export interface PayUHashResponse {
   firstname: string;
   email: string;
   phone: string;
+  udf1?: string;
+  udf2?: string;
+  udf3?: string;
+  udf4?: string;
+  udf5?: string;
   hash: string;
   actionUrl: string;
   isTestMode: boolean;
@@ -30,7 +38,7 @@ export interface PayUHashResponse {
  * Initiates the PayU checkout flow:
  * 1. Generates unique transaction ID
  * 2. Fetches SHA512 signature hash from backend API (/api/payment-hash)
- * 3. Dynamically generates an HTML POST form and auto-submits directly to PayU Test Checkout
+ * 3. Dynamically generates an HTML POST form and auto-submits directly to PayU Checkout
  */
 export async function initiatePayUPayment(params: PayUPaymentParams): Promise<void> {
   const txnid = params.txnid || `SG_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -43,10 +51,15 @@ export async function initiatePayUPayment(params: PayUPaymentParams): Promise<vo
   const payload = {
     txnid,
     amount: params.amount,
-    productinfo: params.productinfo || 'SkillGo Certification Course',
+    productinfo: params.productinfo || 'SkillGo Certification Track',
     firstname: params.firstname || 'Learner',
     email: params.email || 'learner@skillgo.in',
     phone: params.phone || '9876543210',
+    udf1: params.udf1 || '',
+    udf2: params.udf2 || '',
+    udf3: params.udf3 || '',
+    udf4: params.udf4 || '',
+    udf5: params.udf5 || '',
     surl,
     furl
   };
@@ -91,6 +104,12 @@ export async function initiatePayUPayment(params: PayUPaymentParams): Promise<vo
     hash: hashData.hash,
     service_provider: 'payu_paisa'
   };
+
+  if (hashData.udf1) formFields.udf1 = hashData.udf1;
+  if (hashData.udf2) formFields.udf2 = hashData.udf2;
+  if (hashData.udf3) formFields.udf3 = hashData.udf3;
+  if (hashData.udf4) formFields.udf4 = hashData.udf4;
+  if (hashData.udf5) formFields.udf5 = hashData.udf5;
 
   Object.entries(formFields).forEach(([name, value]) => {
     const input = document.createElement('input');

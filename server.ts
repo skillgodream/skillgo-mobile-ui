@@ -39,41 +39,69 @@ async function startServer() {
         udf5 
       } = req.body || {};
 
-      const key = process.env.PAYU_MERCHANT_KEY || 'gtKFFx';
-      const salt = process.env.PAYU_MERCHANT_SALT || 'eCwWELxi';
-      const payuActionUrl = process.env.PAYU_ACTION_URL || 'https://test.payu.in/_payment';
+      const rawKey = process.env.PAYU_MERCHANT_KEY || 'gtKFFx';
+      const rawSalt = process.env.PAYU_MERCHANT_SALT || 'eCwWELxi';
+      const rawActionUrl = process.env.PAYU_ACTION_URL || 'https://test.payu.in/_payment';
 
-      if (!txnid || !amount || !productinfo || !firstname) {
+      const key = String(rawKey).trim();
+      const salt = String(rawSalt).trim();
+      const payuActionUrl = String(rawActionUrl).trim();
+
+      if (!txnid || amount === undefined || amount === null || !productinfo || !firstname) {
         return res.status(400).json({ 
           error: 'Missing required parameters: txnid, amount, productinfo, and firstname are mandatory.' 
         });
       }
 
-      const formattedAmount = parseFloat(amount).toFixed(2);
-      const cleanEmail = (email && String(email).trim()) || 'learner@skillgo.in';
-      const cleanPhone = (phone && String(phone).trim()) || '9876543210';
-      const cleanFirstname = String(firstname).trim();
-      const cleanProductInfo = String(productinfo).trim();
+      const cleanTxnid = String(txnid).trim();
+      const numAmount = parseFloat(String(amount));
+      if (isNaN(numAmount) || numAmount <= 0) {
+        return res.status(400).json({ error: 'Invalid amount supplied.' });
+      }
+      const cleanAmount = numAmount.toFixed(2);
 
-      const cleanUdf1 = udf1 || '';
-      const cleanUdf2 = udf2 || '';
-      const cleanUdf3 = udf3 || '';
-      const cleanUdf4 = udf4 || '';
-      const cleanUdf5 = udf5 || '';
+      const cleanProductInfo = String(productinfo)
+        .replace(/[\r\n\t]/g, ' ')
+        .replace(/[^a-zA-Z0-9\s_-]/g, '')
+        .trim()
+        .slice(0, 100) || 'SkillGo Course';
 
-      const hashString = `${key}|${txnid}|${formattedAmount}|${cleanProductInfo}|${cleanFirstname}|${cleanEmail}|${cleanUdf1}|${cleanUdf2}|${cleanUdf3}|${cleanUdf4}|${cleanUdf5}||||||${salt}`;
+      const cleanFirstname = String(firstname)
+        .replace(/[\r\n\t]/g, ' ')
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .trim() || 'Learner';
 
-      const hash = crypto.createHash('sha512').update(hashString).digest('hex');
+      const cleanEmail = (email && String(email).trim().toLowerCase()) || 'learner@skillgo.in';
+      const cleanPhone = (phone && String(phone).trim().replace(/[^0-9]/g, '')) || '9876543210';
+
+      const cleanUdf1 = udf1 ? String(udf1).trim() : '';
+      const cleanUdf2 = udf2 ? String(udf2).trim() : '';
+      const cleanUdf3 = udf3 ? String(udf3).trim() : '';
+      const cleanUdf4 = udf4 ? String(udf4).trim() : '';
+      const cleanUdf5 = udf5 ? String(udf5).trim() : '';
+
+      const hashSequence = `${key}|${cleanTxnid}|${cleanAmount}|${cleanProductInfo}|${cleanFirstname}|${cleanEmail}|${cleanUdf1}|${cleanUdf2}|${cleanUdf3}|${cleanUdf4}|${cleanUdf5}||||||${salt}`;
+
+      const hash = crypto
+        .createHash('sha512')
+        .update(hashSequence, 'utf8')
+        .digest('hex')
+        .toLowerCase();
 
       return res.status(200).json({
         success: true,
         key,
-        txnid,
-        amount: formattedAmount,
+        txnid: cleanTxnid,
+        amount: cleanAmount,
         productinfo: cleanProductInfo,
         firstname: cleanFirstname,
         email: cleanEmail,
         phone: cleanPhone,
+        udf1: cleanUdf1,
+        udf2: cleanUdf2,
+        udf3: cleanUdf3,
+        udf4: cleanUdf4,
+        udf5: cleanUdf5,
         hash,
         actionUrl: payuActionUrl,
         isTestMode: key === 'gtKFFx' || payuActionUrl.includes('test.payu.in')
