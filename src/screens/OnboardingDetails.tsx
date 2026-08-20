@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from '../lib/router';
 import { enrollmentStore } from '../lib/enrollmentStore';
-import { Button, SkillGoLogo } from '../components/ui';
-import { User, Phone, MapPin, Search, ChevronDown, Check, Sparkles, ShieldCheck, CheckCircle2, RefreshCw, Lock } from 'lucide-react';
+import { SkillGoLogo } from '../components/ui';
+import { User, Phone, MapPin, Search, ChevronDown, Check, Sparkles, CheckCircle2, Lock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { sendSupabaseOtp, verifySupabaseOtp } from '../lib/supabase';
 
 const POPULAR_CITIES = [
   'Delhi NCR',
@@ -30,12 +31,14 @@ const POPULAR_CITIES = [
 export function OnboardingDetailsScreen() {
   const { navigate } = useRouter();
   
+  // Step-by-step wizard state: 1 = Name, 2 = City, 3 = Phone, 4 = OTP
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   
-  // Inline OTP state under Phone Number
-  const [otpSent, setOtpSent] = useState(false);
+  // OTP state
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
   const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -45,18 +48,19 @@ export function OnboardingDetailsScreen() {
   const [resendSuccess, setResendSuccess] = useState(false);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const phoneInputRef = useRef<HTMLInputElement | null>(null);
 
   // City dropdown state
   const [citySearch, setCitySearch] = useState('');
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
   
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; city?: string; otp?: string }>({});
-  const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; city?: boolean }>({});
+  const [error, setError] = useState<string | null>(null);
 
   // Countdown timer for Resend OTP
   useEffect(() => {
     let interval: any = null;
-    if (otpSent && resendTimer > 0) {
+    if (step === 4 && resendTimer > 0) {
       interval = setInterval(() => {
         setResendTimer(prev => prev - 1);
       }, 1000);
@@ -64,60 +68,64 @@ export function OnboardingDetailsScreen() {
       setCanResend(true);
     }
     return () => clearInterval(interval);
-  }, [otpSent, resendTimer]);
+  }, [step, resendTimer]);
+
+  // Focus management on step change
+  useEffect(() => {
+    setError(null);
+    if (step === 1) {
+      setTimeout(() => nameInputRef.current?.focus(), 100);
+    } else if (step === 3) {
+      setTimeout(() => phoneInputRef.current?.focus(), 100);
+    } else if (step === 4) {
+      setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
+    }
+  }, [step]);
 
   const validatePhone = (num: string) => {
     const cleaned = num.replace(/\D/g, '');
     return cleaned.length === 10 && /^[6-9]/.test(cleaned);
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
-    setPhone(raw);
-    setIsOtpVerified(false);
-    
-    // Auto-open OTP section when valid 10-digit number is typed
-    if (raw.length === 10 && /^[6-9]/.test(raw)) {
-      setOtpSent(true);
-      setResendTimer(30);
-      setCanResend(false);
-      setOtp(['', '', '', '', '', '']);
-      setOtpError(null);
-      setErrors(prev => ({ ...prev, phone: undefined }));
-      setTimeout(() => otpInputRefs.current[0]?.focus(), 150);
-    } else {
-      setOtpSent(false);
-    }
-
-    if (touched.phone) {
-      if (!raw) {
-        setErrors(prev => ({ ...prev, phone: 'Mobile number is required' }));
-      } else if (!validatePhone(raw)) {
-        setErrors(prev => ({ ...prev, phone: 'Please enter a valid 10-digit mobile number' }));
-      } else {
-        setErrors(prev => ({ ...prev, phone: undefined }));
-      }
-    }
-  };
-
-  const handleNameBlur = () => {
-    setTouched(prev => ({ ...prev, name: true }));
+  const handleNextFromStep1 = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!name.trim()) {
-      setErrors(prev => ({ ...prev, name: 'Please enter your name' }));
-    } else {
-      setErrors(prev => ({ ...prev, name: undefined }));
+      setError('Please enter your full name to proceed.');
+      return;
     }
+    setError(null);
+    setStep(2);
   };
 
-  const handlePhoneBlur = () => {
-    setTouched(prev => ({ ...prev, phone: true }));
-    if (!phone) {
-      setErrors(prev => ({ ...prev, phone: 'Mobile number is required' }));
-    } else if (!validatePhone(phone)) {
-      setErrors(prev => ({ ...prev, phone: 'Please enter a valid 10-digit mobile number' }));
-    } else {
-      setErrors(prev => ({ ...prev, phone: undefined }));
+  const handleNextFromStep2 = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!city.trim()) {
+      setError('Please select or enter your city.');
+      return;
     }
+    setError(null);
+    setStep(3);
+  };
+
+  const handleNextFromStep3 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!validatePhone(cleanPhone)) {
+      setError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    setError(null);
+
+    // Send live Supabase OTP
+    await sendSupabaseOtp({
+      phone: cleanPhone,
+      name: name.trim(),
+      city: city.trim()
+    });
+
+    setStep(4);
+    setResendTimer(30);
+    setCanResend(false);
   };
 
   const handleOtpDigitChange = (index: number, value: string) => {
@@ -129,7 +137,6 @@ export function OnboardingDetailsScreen() {
       return;
     }
 
-    // Handle paste
     if (cleanValue.length > 1) {
       const digits = cleanValue.slice(0, 6).split('');
       const newOtp = [...otp];
@@ -151,12 +158,10 @@ export function OnboardingDetailsScreen() {
     setOtp(newOtp);
     setOtpError(null);
 
-    // Auto move forward
     if (index < 5 && cleanValue) {
       otpInputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify if all 6 digits entered
     if (index === 5 && cleanValue && newOtp.every(d => d !== '')) {
       triggerVerifyOtp(newOtp.join(''));
     }
@@ -168,7 +173,7 @@ export function OnboardingDetailsScreen() {
     }
   };
 
-  const triggerVerifyOtp = (code: string) => {
+  const triggerVerifyOtp = async (code: string) => {
     if (code.length < 6) {
       setOtpError('Please enter all 6 digits');
       return;
@@ -176,22 +181,46 @@ export function OnboardingDetailsScreen() {
     setIsVerifyingOtp(true);
     setOtpError(null);
 
-    setTimeout(() => {
+    try {
+      await verifySupabaseOtp({
+        phone,
+        token: code
+      });
+
       setIsVerifyingOtp(false);
       setIsOtpVerified(true);
-      setErrors(prev => ({ ...prev, otp: undefined }));
-    }, 450);
+
+      // Complete onboarding and navigate home
+      enrollmentStore.completeOnboarding({
+        name: name.trim(),
+        phone: phone.trim(),
+        city: city.trim()
+      });
+
+      setTimeout(() => {
+        navigate('home');
+      }, 600);
+    } catch (err: any) {
+      setIsVerifyingOtp(false);
+      setOtpError(err?.message || 'Verification failed. Please check OTP.');
+    }
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     if (!canResend) return;
     setResendTimer(30);
     setCanResend(false);
     setResendSuccess(true);
     setOtpError(null);
     setOtp(['', '', '', '', '', '']);
-    setIsOtpVerified(false);
     otpInputRefs.current[0]?.focus();
+
+    await sendSupabaseOtp({
+      phone,
+      name: name.trim(),
+      city: city.trim()
+    });
+
     setTimeout(() => setResendSuccess(false), 3000);
   };
 
@@ -199,41 +228,11 @@ export function OnboardingDetailsScreen() {
     setCity(selectedCity);
     setIsCityDropdownOpen(false);
     setCitySearch('');
-    setTouched(prev => ({ ...prev, city: true }));
-    setErrors(prev => ({ ...prev, city: undefined }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newErrors: { name?: string; phone?: string; city?: string; otp?: string } = {};
-    if (!name.trim()) newErrors.name = 'Please enter your name';
-    if (!phone || !validatePhone(phone)) newErrors.phone = 'Please enter a valid 10-digit mobile number';
-    if (!city.trim()) newErrors.city = 'Please select your city';
-    if (phone && validatePhone(phone) && !isOtpVerified) {
-      newErrors.otp = 'Please verify your mobile number with the 6-digit OTP';
-    }
-
-    setTouched({ name: true, phone: true, city: true });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // Complete onboarding & store profile
-    enrollmentStore.completeOnboarding({
-      name: name.trim(),
-      phone: phone.trim(),
-      city: city.trim()
-    });
-
-    navigate('home');
+    setError(null);
+    setStep(3); // Automatically progress to Phone after city selection
   };
 
   const handleSkip = () => {
-    // Allows immediate exploration of SkillGo Home as a guest
-    // Registration will be mandated during checkout before payment
     enrollmentStore.skipOnboarding();
     navigate('home');
   };
@@ -242,359 +241,479 @@ export function OnboardingDetailsScreen() {
     c.toLowerCase().includes(citySearch.toLowerCase())
   );
 
+  // Dynamic Theme Styling based on active step
+  const getStepTheme = () => {
+    switch (step) {
+      case 1:
+        return {
+          gradient: 'from-rose-500 via-pink-500 to-red-600',
+          bgBlob: 'bg-gradient-to-tr from-rose-400/20 via-pink-300/20 to-orange-200/30',
+          badgeBg: 'bg-rose-50 text-rose-700 border-rose-200',
+          buttonClass: 'bg-gradient-to-r from-rose-500 via-pink-500 to-red-600 hover:opacity-95 shadow-lg shadow-rose-500/25 text-white',
+          stepLabel: 'Step 1 of 4 • Your Name'
+        };
+      case 2:
+        return {
+          gradient: 'from-amber-500 via-orange-500 to-emerald-600',
+          bgBlob: 'bg-gradient-to-tr from-amber-300/20 via-orange-300/20 to-emerald-200/30',
+          badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
+          buttonClass: 'bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-600 hover:opacity-95 shadow-lg shadow-orange-500/25 text-white',
+          stepLabel: 'Step 2 of 4 • Your City'
+        };
+      case 3:
+      case 4:
+      default:
+        return {
+          gradient: 'from-violet-600 via-purple-600 to-indigo-700',
+          bgBlob: 'bg-gradient-to-tr from-violet-400/20 via-purple-300/20 to-indigo-300/30',
+          badgeBg: 'bg-violet-50 text-violet-700 border-violet-200',
+          buttonClass: 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 hover:opacity-95 shadow-lg shadow-purple-600/25 text-white',
+          stepLabel: step === 3 ? 'Step 3 of 4 • Mobile Number' : 'Step 4 of 4 • OTP Verification'
+        };
+    }
+  };
+
+  const theme = getStepTheme();
+
   return (
-    <div className="min-h-screen bg-[#FDFDFE] flex flex-col justify-between selection:bg-blue-600 selection:text-white" id="onboarding-details-screen">
+    <div className="min-h-screen bg-[#FDFBF7] relative overflow-hidden flex flex-col justify-between selection:bg-purple-600 selection:text-white" id="onboarding-wizard-screen">
       
+      {/* Dynamic Organic Fluid Background Waves & Blobs */}
+      <div className="absolute top-0 right-0 -w-96 -h-96 w-[500px] h-[500px] rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-70 translate-x-1/3 -translate-y-1/3 bg-gradient-to-br from-purple-300/40 via-pink-300/30 to-amber-200/30" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-60 -translate-x-1/3 translate-y-1/3 bg-gradient-to-tr from-rose-200/40 via-indigo-200/30 to-emerald-200/30" />
+
+      {/* Organic SVG Wave Header/Footer Accent */}
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none opacity-40 overflow-hidden leading-none z-0">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-24 text-purple-200/40 fill-current">
+          <path d="M0,0 C150,90 350,-40 500,40 C650,120 900,10 1200,50 L1200,120 L0,120 Z"></path>
+        </svg>
+      </div>
+
       {/* Top Minimal Header */}
-      <header className="w-full py-5 px-6 sm:px-10 flex items-center justify-between border-b border-slate-100 bg-white">
+      <header className="relative z-10 w-full py-5 px-6 sm:px-10 flex items-center justify-between border-b border-amber-100/60 bg-white/70 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <SkillGoLogo />
         </div>
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="text-xs font-semibold text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
-          id="top-skip-button"
-        >
-          Skip to Home →
-        </button>
+        
+        <div className="flex items-center gap-3">
+          {step > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (step === 2) setStep(1);
+                else if (step === 3) setStep(2);
+                else if (step === 4) setStep(3);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-full transition-all shadow-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSkip}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-900 bg-white/80 hover:bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shadow-sm"
+            id="top-skip-button"
+          >
+            Skip to Home →
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-9 shadow-sm">
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-2xl shadow-indigo-950/5">
           
-          {/* Header Title & Subtitle */}
-          <div className="mb-7">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-2.5">
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-between mb-6">
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider border ${theme.badgeBg}`}>
               <Sparkles className="w-3.5 h-3.5" />
-              Quick Learner Setup
+              {theme.stepLabel}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              What's your name?
-            </h1>
-            <p className="text-slate-500 text-sm sm:text-base mt-1.5 leading-relaxed">
-              Enter your basic details to set up your SkillGo learning profile and start your job-ready journey.
-            </p>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            
-            {/* 1. NAME FIELD */}
-            <div>
-              <label htmlFor="learner-name-input" className="block text-sm font-bold text-slate-800 mb-1.5">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <User className="w-4 h-4" />
-                </div>
-                <input
-                  id="learner-name-input"
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (touched.name && e.target.value.trim()) {
-                      setErrors(prev => ({ ...prev, name: undefined }));
-                    }
-                  }}
-                  onBlur={handleNameBlur}
-                  placeholder="Enter your name"
-                  className={`w-full pl-10 pr-4 py-3 text-base rounded-xl border bg-slate-50/50 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all ${
-                    errors.name 
-                      ? 'border-red-400 focus:ring-2 focus:ring-red-500/20' 
-                      : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15'
+            {/* Step Dots */}
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3, 4].map((s) => (
+                <div
+                  key={s}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    s === step 
+                      ? 'w-8 bg-gradient-to-r ' + theme.gradient 
+                      : s < step 
+                      ? 'w-2 bg-emerald-500' 
+                      : 'w-2 bg-slate-200'
                   }`}
                 />
-              </div>
-              {errors.name && (
-                <p className="mt-1 text-xs font-semibold text-red-500 flex items-center gap-1">
-                  {errors.name}
-                </p>
-              )}
+              ))}
             </div>
+          </div>
 
-            {/* 2. PHONE NUMBER FIELD */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="learner-phone-input" className="block text-sm font-bold text-slate-800">
-                  Mobile Number <span className="text-red-500">*</span>
-                </label>
-                {isOtpVerified && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Verified
-                  </span>
-                )}
+          {/* ───────────────────────────────────────────────────────────── */}
+          {/* STEP 1: NAME */}
+          {/* ───────────────────────────────────────────────────────────── */}
+          {step === 1 && (
+            <form onSubmit={handleNextFromStep1} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  What's your full name?
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-2 leading-relaxed">
+                  Let's personalize your SkillGo career acceleration experience with your name.
+                </p>
               </div>
-              
-              <div className="relative flex rounded-xl border border-slate-200 bg-slate-50/50 focus-within:bg-white focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/15 transition-all overflow-hidden">
-                <div className="flex items-center gap-1 px-3 bg-slate-100/70 border-r border-slate-200 text-slate-700 font-semibold text-sm select-none">
-                  <span>🇮🇳</span>
-                  <span>+91</span>
-                </div>
-                <div className="relative flex-1 flex items-center">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Phone className="w-4 h-4" />
+
+              <div className="space-y-2">
+                <label htmlFor="name-input" className="block text-sm font-bold text-slate-800">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-5 h-5" />
                   </div>
                   <input
-                    id="learner-phone-input"
-                    type="tel"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    onBlur={handlePhoneBlur}
-                    placeholder="Enter your 10-digit mobile number"
-                    className="w-full pl-9 pr-4 py-3 text-base bg-transparent text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                    maxLength={10}
+                    ref={nameInputRef}
+                    id="name-input"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full pl-12 pr-4 py-3.5 text-base rounded-2xl border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/15 transition-all font-medium"
+                    autoFocus
                   />
                 </div>
               </div>
-              
-              {errors.phone && (
-                <p className="mt-1 text-xs font-semibold text-red-500 flex items-center gap-1">
-                  {errors.phone}
+
+              {error && (
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
+                  {error}
                 </p>
               )}
 
-              {/* ───────────────────────────────────────────────────────────── */}
-              {/* 3. OTP SECTION (Directly Under Phone Number) */}
-              {/* ───────────────────────────────────────────────────────────── */}
-              {phone.length === 10 && validatePhone(phone) && (
-                <div className="mt-3.5 p-4 rounded-xl bg-slate-50 border border-slate-200/80 animate-in fade-in slide-in-from-top-2 duration-200" id="inline-otp-section">
-                  
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                      <Lock className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Enter 6-digit OTP sent to +91 {phone}</span>
-                    </div>
-                    {isOtpVerified && (
-                      <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Verified
-                      </span>
-                    )}
-                  </div>
-
-                  {resendSuccess && (
-                    <div className="mb-2.5 p-2 rounded-lg bg-emerald-100/70 text-emerald-800 text-xs font-medium flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>OTP resent to +91 {phone}</span>
-                    </div>
-                  )}
-
-                  {/* 6 OTP Input Boxes */}
-                  <div className="flex items-center justify-between gap-1.5 sm:gap-2">
-                    {otp.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => (otpInputRefs.current[idx] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={1}
-                        value={digit}
-                        disabled={isOtpVerified}
-                        onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                        className={`w-10 sm:w-12 h-11 sm:h-12 text-center text-lg sm:text-xl font-black rounded-lg border transition-all ${
-                          isOtpVerified
-                            ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
-                            : digit 
-                            ? 'border-blue-600 bg-blue-50/30 text-blue-900 ring-2 ring-blue-600/10' 
-                            : 'border-slate-200 bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Inline OTP verification error */}
-                  {(otpError || errors.otp) && (
-                    <p className="mt-2 text-xs font-semibold text-red-500">
-                      {otpError || errors.otp}
-                    </p>
-                  )}
-
-                  {/* Resend & Auto-fill controls */}
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <div>
-                      {isOtpVerified ? (
-                        <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Mobile number verified
-                        </span>
-                      ) : canResend ? (
-                        <button
-                          type="button"
-                          onClick={handleResendOtp}
-                          className="font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
-                          id="inline-resend-otp-button"
-                        >
-                          Resend OTP
-                        </button>
-                      ) : (
-                        <span className="text-slate-400 font-medium">
-                          Resend in <strong className="text-slate-600">{resendTimer}s</strong>
-                        </span>
-                      )}
-                    </div>
-
-                    {!isOtpVerified && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const demo = ['1', '2', '3', '4', '5', '6'];
-                          setOtp(demo);
-                          setOtpError(null);
-                          triggerVerifyOtp('123456');
-                        }}
-                        className="text-blue-600 font-semibold hover:underline cursor-pointer"
-                      >
-                        Auto-fill OTP (123456)
-                      </button>
-                    )}
-                  </div>
-
-                </div>
-              )}
-            </div>
-
-            {/* 4. CITY SELECTION */}
-            <div>
-              <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                City / Location <span className="text-red-500">*</span>
-              </label>
-              
-              <div className="relative">
+              <div className="pt-2">
                 <button
-                  type="button"
-                  id="learner-city-select-button"
-                  onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-                  className={`w-full flex items-center justify-between pl-10 pr-4 py-3 text-left text-base rounded-xl border bg-slate-50/50 text-slate-900 focus:bg-white focus:outline-none transition-all ${
-                    errors.city 
-                      ? 'border-red-400 focus:ring-2 focus:ring-red-500/20' 
-                      : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15'
-                  }`}
+                  type="submit"
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
                 >
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <span className={city ? 'text-slate-900 font-medium' : 'text-slate-400'}>
-                    {city || 'Select your city'}
-                  </span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span>Continue to City</span>
+                  <ArrowRight className="w-5 h-5" />
                 </button>
+              </div>
+            </form>
+          )}
 
-                {/* City Dropdown Menu */}
-                {isCityDropdownOpen && (
-                  <div className="absolute z-30 mt-1.5 w-full bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    <div className="p-2.5 border-b border-slate-100 bg-slate-50/70">
-                      <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="text"
-                          value={citySearch}
-                          onChange={(e) => setCitySearch(e.target.value)}
-                          placeholder="Search or type city..."
-                          className="w-full pl-9 pr-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
-                          autoFocus
-                        />
+          {/* ───────────────────────────────────────────────────────────── */}
+          {/* STEP 2: CITY */}
+          {/* ───────────────────────────────────────────────────────────── */}
+          {step === 2 && (
+            <form onSubmit={handleNextFromStep2} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Which city are you in?
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-2 leading-relaxed">
+                  We match you with regional job placement partners and live employer drives near {city || 'you'}.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-800">
+                  Select or Search City <span className="text-rose-500">*</span>
+                </label>
+                
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                    className="w-full flex items-center justify-between pl-12 pr-4 py-3.5 text-left text-base rounded-2xl border border-slate-200 bg-slate-50/60 text-slate-900 focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 transition-all font-medium cursor-pointer"
+                  >
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                      <MapPin className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <span className={city ? 'text-slate-900 font-bold' : 'text-slate-400'}>
+                      {city || 'Choose your city'}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* City Dropdown Menu */}
+                  {isCityDropdownOpen && (
+                    <div className="absolute z-30 mt-2 w-full bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                      <div className="p-3 border-b border-slate-100 bg-slate-50">
+                        <div className="relative">
+                          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            value={citySearch}
+                            onChange={(e) => setCitySearch(e.target.value)}
+                            placeholder="Type city name..."
+                            className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 font-medium"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="max-h-56 overflow-y-auto p-1.5">
+                        {citySearch && !filteredCities.includes(citySearch) && (
+                          <button
+                            type="button"
+                            onClick={() => handleCitySelect(citySearch)}
+                            className="w-full text-left px-4 py-2.5 text-sm rounded-xl hover:bg-amber-50 text-amber-800 font-bold flex items-center gap-2"
+                          >
+                            <MapPin className="w-4 h-4 text-amber-600" />
+                            <span>Use "{citySearch}"</span>
+                          </button>
+                        )}
+                        
+                        {filteredCities.map((cityName) => (
+                          <button
+                            key={cityName}
+                            type="button"
+                            onClick={() => handleCitySelect(cityName)}
+                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl flex items-center justify-between transition-colors font-medium ${
+                              city === cityName 
+                                ? 'bg-amber-50 text-amber-900 font-extrabold' 
+                                : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{cityName}</span>
+                            {city === cityName && <Check className="w-4 h-4 text-amber-600" />}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    
-                    <div className="max-h-52 overflow-y-auto p-1.5">
-                      {citySearch && !filteredCities.includes(citySearch) && (
-                        <button
-                          type="button"
-                          onClick={() => handleCitySelect(citySearch)}
-                          className="w-full text-left px-3.5 py-2 text-sm rounded-lg hover:bg-blue-50 text-blue-700 font-semibold flex items-center gap-2"
-                        >
-                          <MapPin className="w-4 h-4 text-blue-600" />
-                          <span>Use "{citySearch}"</span>
-                        </button>
-                      )}
-                      
-                      {filteredCities.map((cityName) => (
-                        <button
-                          key={cityName}
-                          type="button"
-                          onClick={() => handleCitySelect(cityName)}
-                          className={`w-full text-left px-3.5 py-2 text-sm rounded-lg flex items-center justify-between transition-colors ${
-                            city === cityName 
-                              ? 'bg-blue-50 text-blue-700 font-bold' 
-                              : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span>{cityName}</span>
-                          {city === cityName && <Check className="w-4 h-4 text-blue-600" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                {/* Popular City Quick Chips */}
+                <div className="pt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-slate-400 font-semibold mr-1">Popular:</span>
+                  {['Delhi NCR', 'Bengaluru', 'Mumbai', 'Pune', 'Hyderabad'].map((quickCity) => (
+                    <button
+                      key={quickCity}
+                      type="button"
+                      onClick={() => handleCitySelect(quickCity)}
+                      className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer ${
+                        city === quickCity 
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm' 
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {quickCity}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {errors.city && (
-                <p className="mt-1 text-xs font-semibold text-red-500 flex items-center gap-1">
-                  {errors.city}
+              {error && (
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
+                  {error}
                 </p>
               )}
 
-              {/* Quick Popular City Chips */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-slate-400 mr-1">Popular:</span>
-                {['Delhi NCR', 'Bengaluru', 'Mumbai', 'Pune', 'Hyderabad'].map((quickCity) => (
-                  <button
-                    key={quickCity}
-                    type="button"
-                    onClick={() => handleCitySelect(quickCity)}
-                    className={`text-xs px-2.5 py-1 rounded-md border transition-all ${
-                      city === quickCity 
-                        ? 'bg-blue-600 text-white border-blue-600 font-semibold' 
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                >
+                  <span>Continue to Mobile Number</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ───────────────────────────────────────────────────────────── */}
+          {/* STEP 3: PHONE NUMBER */}
+          {/* ───────────────────────────────────────────────────────────── */}
+          {step === 3 && (
+            <form onSubmit={handleNextFromStep3} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Enter your mobile number
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-2 leading-relaxed">
+                  We'll send a secure 6-digit OTP verification code via SMS to verify your account.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="phone-input" className="block text-sm font-bold text-slate-800">
+                  Mobile Number <span className="text-rose-500">*</span>
+                </label>
+                
+                <div className="relative flex rounded-2xl border border-slate-200 bg-slate-50/60 focus-within:bg-white focus-within:border-purple-600 focus-within:ring-4 focus-within:ring-purple-600/15 transition-all overflow-hidden">
+                  <div className="flex items-center gap-1.5 px-4 bg-slate-100 border-r border-slate-200 text-slate-800 font-bold text-sm select-none">
+                    <span>🇮🇳</span>
+                    <span>+91</span>
+                  </div>
+                  <div className="relative flex-1 flex items-center">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Phone className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <input
+                      ref={phoneInputRef}
+                      id="phone-input"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={phone}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setPhone(raw);
+                        setError(null);
+                      }}
+                      placeholder="98765 43210"
+                      className="w-full pl-11 pr-4 py-3.5 text-base bg-transparent text-slate-900 placeholder:text-slate-400 focus:outline-none font-bold tracking-wide"
+                      maxLength={10}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
+                  {error}
+                </p>
+              )}
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                >
+                  <span>Send Verification OTP</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ───────────────────────────────────────────────────────────── */}
+          {/* STEP 4: OTP VERIFICATION */}
+          {/* ───────────────────────────────────────────────────────────── */}
+          {step === 4 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg mb-2">
+                  <Lock className="w-3.5 h-3.5" />
+                  SMS Sent to +91 {phone}
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Enter 6-digit OTP
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-1.5 leading-relaxed">
+                  Enter the verification code sent to your mobile number.
+                </p>
+              </div>
+
+              {resendSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-2 border border-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>New OTP sent successfully via SMS</span>
+                </div>
+              )}
+
+              {/* 6 OTP Input Boxes - STAYS COMPLETELY BLANK */}
+              <div className="flex items-center justify-between gap-2">
+                {otp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => (otpInputRefs.current[idx] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={digit}
+                    disabled={isOtpVerified || isVerifyingOtp}
+                    onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    className={`w-12 h-14 text-center text-xl font-black rounded-2xl border transition-all ${
+                      isOtpVerified
+                        ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
+                        : digit 
+                        ? 'border-purple-600 bg-purple-50/50 text-purple-900 ring-4 ring-purple-600/15' 
+                        : 'border-slate-200 bg-slate-50/60 focus:bg-white focus:border-purple-600 focus:ring-4 focus:ring-purple-600/15'
                     }`}
-                  >
-                    {quickCity}
-                  </button>
+                  />
                 ))}
               </div>
+
+              {(otpError || error) && (
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
+                  {otpError || error}
+                </p>
+              )}
+
+              {isVerifyingOtp && (
+                <div className="text-center py-2 text-sm font-bold text-purple-600 animate-pulse">
+                  Verifying OTP securely with Supabase...
+                </div>
+              )}
+
+              {isOtpVerified && (
+                <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-800 text-sm font-extrabold flex items-center justify-center gap-2 border border-emerald-200">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <span>Verification Successful! Launching SkillGo...</span>
+                </div>
+              )}
+
+              {/* Resend & Auto-fill controls */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <div>
+                  {canResend ? (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      className="font-bold text-purple-600 hover:text-purple-800 hover:underline cursor-pointer"
+                    >
+                      Resend SMS OTP
+                    </button>
+                  ) : (
+                    <span className="text-slate-400 font-medium">
+                      Resend code in <strong className="text-slate-700">{resendTimer}s</strong>
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="font-bold text-slate-500 hover:text-slate-900 cursor-pointer"
+                >
+                  Change mobile number
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => triggerVerifyOtp(otp.join(''))}
+                  disabled={otp.join('').length < 6 || isVerifyingOtp || isOtpVerified}
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    otp.join('').length === 6 && !isOtpVerified
+                      ? theme.buttonClass
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span>{isVerifyingOtp ? 'Verifying...' : isOtpVerified ? 'Verified Successfully' : 'Verify & Launch SkillGo'}</span>
+                  {!isVerifyingOtp && !isOtpVerified && <Check className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
-
-            {/* 5. PRIMARY ACTION BUTTON */}
-            <div className="pt-3 space-y-3">
-              <Button
-                type="submit"
-                variant="blue"
-                size="lg"
-                className="w-full py-3.5 text-base font-bold shadow-md shadow-blue-500/20"
-                id="onboarding-continue-button"
-              >
-                Continue →
-              </Button>
-
-              {/* ───────────────────────────────────────────────────────────── */}
-              {/* 6. SKIP OPTION (Directly Under Continue Button) */}
-              {/* ───────────────────────────────────────────────────────────── */}
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="w-full py-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5 hover:underline"
-                id="onboarding-skip-bottom-button"
-              >
-                <span>Skip for now, explore SkillGo</span>
-                <span className="text-xs text-slate-400">→</span>
-              </button>
-            </div>
-
-          </form>
+          )}
 
         </div>
       </main>
 
       {/* Footer Info */}
-      <footer className="py-4 text-center text-xs text-slate-400 border-t border-slate-100">
-        SkillGo • Vocational Career Acceleration Platform • Safe & Secure OTP Verification
+      <footer className="relative z-10 py-6 text-center text-xs text-slate-400 border-t border-amber-100/60 bg-white/50 backdrop-blur-sm">
+        SkillGo • Job-Ready Vocational Career Acceleration • Bank-Grade Secure Supabase Auth
       </footer>
 
     </div>

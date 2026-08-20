@@ -29,6 +29,7 @@ import { Button, Badge } from './ui';
 import { useRouter } from '../lib/router';
 import { CartItem } from '../lib/types';
 import { initiatePayUPayment } from '../lib/payu';
+import { sendSupabaseOtp, verifySupabaseOtp } from '../lib/supabase';
 
 const POPULAR_CITIES = [
   'Delhi NCR',
@@ -66,7 +67,7 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
   const [regPhone, setRegPhone] = useState(profile?.phone ? profile.phone.replace('+91', '').trim() : '');
   const [regCity, setRegCity] = useState(profile?.city || 'Delhi NCR');
   const [regCustomCity, setRegCustomCity] = useState('');
-  const [regOtp, setRegOtp] = useState<string[]>(['4', '2', '8', '9', '0', '1']);
+  const [regOtp, setRegOtp] = useState<string[]>(['', '', '', '', '', '']);
   const [regOtpVerified, setRegOtpVerified] = useState(false);
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [resendTimer, setResendTimer] = useState(30);
@@ -85,6 +86,8 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       }
       setIsProcessing(false);
       setRegErrors({});
+      setRegOtp(['', '', '', '', '', '']);
+      setRegOtpVerified(false);
       if (profile?.name && profile.name !== 'Learner') {
         setRegName(profile.name);
       }
@@ -119,6 +122,14 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
     if (!registered) {
       // Mandate registration before payment
       setStep('register');
+      const cleanPhone = regPhone.replace(/\D/g, '');
+      if (cleanPhone.length === 10) {
+        sendSupabaseOtp({
+          phone: cleanPhone,
+          name: regName,
+          city: regCity
+        });
+      }
     } else {
       setStep('checkout');
     }
@@ -159,23 +170,27 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
     }
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     setResendTimer(30);
     setCanResend(false);
     setRegOtp(['', '', '', '', '', '']);
-    setOtpNotice('New verification code sent via SMS');
+    setOtpNotice('Sending live SMS code...');
+
+    const cleanPhone = regPhone.replace(/\D/g, '');
+    if (cleanPhone.length === 10) {
+      await sendSupabaseOtp({
+        phone: cleanPhone,
+        name: regName,
+        city: regCustomCity.trim() || regCity
+      });
+    }
+
+    setOtpNotice('Verification code sent');
     setTimeout(() => setOtpNotice(null), 3000);
     otpInputRefs.current[0]?.focus();
   };
 
-  const handleAutoFillTestOtp = () => {
-    setRegOtp(['4', '2', '8', '9', '0', '1']);
-    setRegOtpVerified(true);
-    setOtpNotice('Test verification OTP (428901) applied');
-    setTimeout(() => setOtpNotice(null), 3000);
-  };
-
-  const handleCompleteRegistrationAndProceed = (e: React.FormEvent) => {
+  const handleCompleteRegistrationAndProceed = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
@@ -194,7 +209,7 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
     }
 
     const enteredOtp = regOtp.join('');
-    if (!regOtpVerified && enteredOtp.length < 6) {
+    if (enteredOtp.length < 6) {
       newErrors.otp = 'Please enter the 6-digit OTP sent to your phone';
     }
 
@@ -202,6 +217,12 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       setRegErrors(newErrors);
       return;
     }
+
+    // Call live Supabase OTP verification
+    await verifySupabaseOtp({
+      phone: cleanPhone,
+      token: enteredOtp
+    });
 
     // Save registration in store with full storage wipe, unique profile generation, and fresh cart session
     const currentCartSnapshot = [...cart];
@@ -588,13 +609,7 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
                     <Lock className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Enter 6-Digit SMS OTP <span className="text-rose-500">*</span></span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleAutoFillTestOtp}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md cursor-pointer transition-colors"
-                  >
-                    Quick Auto-Fill (428901)
-                  </button>
+                  <span className="text-[10px] text-slate-400 font-medium">Authentication</span>
                 </div>
 
                 <div className="flex items-center justify-between gap-1.5">

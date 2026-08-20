@@ -3,6 +3,7 @@ import { useRouter } from '../lib/router';
 import { enrollmentStore } from '../lib/enrollmentStore';
 import { Button, SkillGoLogo } from '../components/ui';
 import { ShieldCheck, ArrowLeft, RefreshCw, CheckCircle2, Lock } from 'lucide-react';
+import { sendSupabaseOtp, verifySupabaseOtp } from '../lib/supabase';
 
 export function OnboardingOtpScreen() {
   const { currentRoute, navigate } = useRouter();
@@ -40,8 +41,9 @@ export function OnboardingOtpScreen() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  // Auto-focus first input on mount
+  // Auto-focus first input on mount with blank state
   useEffect(() => {
+    setOtp(['', '', '', '', '', '']);
     inputRefs.current[0]?.focus();
   }, []);
 
@@ -85,7 +87,7 @@ export function OnboardingOtpScreen() {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (!canResend) return;
     setTimer(30);
     setCanResend(false);
@@ -93,10 +95,18 @@ export function OnboardingOtpScreen() {
     setError(null);
     setOtp(['', '', '', '', '', '']);
     inputRefs.current[0]?.focus();
-    setTimeout(() => setResendSuccess(false), 3000);
+
+    // Trigger live Supabase OTP request
+    await sendSupabaseOtp({
+      phone: rawPhone,
+      name,
+      city
+    });
+
+    setTimeout(() => setResendSuccess(false), 4000);
   };
 
-  const handleVerify = (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const enteredOtp = otp.join('');
 
@@ -108,8 +118,13 @@ export function OnboardingOtpScreen() {
     setIsVerifying(true);
     setError(null);
 
-    // Verification simulation
-    setTimeout(() => {
+    try {
+      // Live Supabase verification
+      await verifySupabaseOtp({
+        phone: rawPhone,
+        token: enteredOtp
+      });
+
       setIsVerifying(false);
       setIsSuccess(true);
 
@@ -124,7 +139,10 @@ export function OnboardingOtpScreen() {
       setTimeout(() => {
         navigate('home');
       }, 700);
-    }, 600);
+    } catch (err: any) {
+      setIsVerifying(false);
+      setError(err?.message || 'Verification failed. Please try again.');
+    }
   };
 
   return (
@@ -212,19 +230,10 @@ export function OnboardingOtpScreen() {
                 </p>
               )}
 
-              {/* Demo Helper Pill */}
+              {/* Security Helper Note */}
               <div className="mt-3.5 flex items-center justify-between text-xs text-slate-400 px-1">
-                <span>Enter any 6 digits (e.g. 123456)</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtp(['1', '2', '3', '4', '5', '6']);
-                    setError(null);
-                  }}
-                  className="text-blue-600 font-semibold hover:underline cursor-pointer"
-                >
-                  Auto-fill demo OTP
-                </button>
+                <span>Enter the 6-digit authentication code</span>
+                <span className="text-slate-400">Encrypted SMS OTP</span>
               </div>
             </div>
 
