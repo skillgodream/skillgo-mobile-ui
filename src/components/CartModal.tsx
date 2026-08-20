@@ -20,12 +20,15 @@ import {
   MapPin,
   Lock,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  QrCode,
+  Mail
 } from 'lucide-react';
 import { useCartState, useEnrollmentState, enrollmentStore } from '../lib/enrollmentStore';
 import { Button, Badge } from './ui';
 import { useRouter } from '../lib/router';
 import { CartItem } from '../lib/types';
+import { initiatePayUPayment } from '../lib/payu';
 
 const POPULAR_CITIES = [
   'Delhi NCR',
@@ -54,6 +57,9 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
   const [upiId, setUpiId] = useState('vikram@okaxis');
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
+  const [userEmail, setUserEmail] = useState(profile?.email || 'vikramsharrma83@gmail.com');
+  const [isPayuRedirecting, setIsPayuRedirecting] = useState(false);
+  const [payuError, setPayuError] = useState<string | null>(null);
 
   // Mandatory Registration Form States (used when user skipped onboarding)
   const [regName, setRegName] = useState(profile?.name && profile.name !== 'Vikram Sharma' ? profile.name : '');
@@ -208,6 +214,29 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       setIsProcessing(false);
       setStep('success');
     }, 750);
+  };
+
+  const handlePayUNow = async () => {
+    try {
+      setIsPayuRedirecting(true);
+      setPayuError(null);
+      const candidateName = profile.name || regName || 'Vikram Sharma';
+      const candidatePhone = profile.phone || regPhone || '9876543210';
+      const candidateEmail = userEmail.trim() || `${candidateName.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
+      const productTitles = cart.map(i => i.title).join(', ').slice(0, 80) || 'SkillGo Certification Track';
+
+      await initiatePayUPayment({
+        amount: totalAmount,
+        productinfo: productTitles,
+        firstname: candidateName,
+        email: candidateEmail,
+        phone: candidatePhone
+      });
+    } catch (err: any) {
+      console.error('PayU payment error:', err);
+      setPayuError(err?.message || 'Unable to connect to PayU Gateway.');
+      setIsPayuRedirecting(false);
+    }
   };
 
   const handleFinishAndNavigate = (targetScreen?: string, params?: any) => {
@@ -625,27 +654,42 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
           {step === 'checkout' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               
-              {/* Registered Learner Badge */}
-              <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4" />
+              {/* Registered Learner & Invoice Email */}
+              <div className="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div className="truncate">
+                      <span className="text-xs font-bold text-slate-900 block truncate">
+                        Learner: {profile.name || regName || 'Vikram Sharma'}
+                      </span>
+                      <span className="text-[11px] text-slate-500 block truncate">
+                        {profile.phone || regPhone || '+91 98765 43210'} • {profile.city || regCity || 'Delhi NCR'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="truncate">
-                    <span className="text-xs font-bold text-slate-900 block truncate">
-                      Enrolling: {profile.name || regName || 'Learner'}
-                    </span>
-                    <span className="text-[11px] text-slate-500 block truncate">
-                      {profile.phone || regPhone} • {profile.city || regCity} (Verified Learner)
-                    </span>
-                  </div>
+                  <button 
+                    onClick={() => setStep('register')}
+                    className="text-[11px] font-bold text-blue-600 hover:underline shrink-0 cursor-pointer"
+                  >
+                    Edit
+                  </button>
                 </div>
-                <button 
-                  onClick={() => setStep('register')}
-                  className="text-[11px] font-bold text-blue-600 hover:underline shrink-0 cursor-pointer"
-                >
-                  Edit Details
-                </button>
+
+                {/* Email input for PayU receipt */}
+                <div className="pt-2 border-t border-emerald-100 flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                  <input
+                    type="email"
+                    value={userEmail}
+                    onChange={e => setUserEmail(e.target.value)}
+                    placeholder="learner.email@example.com (for PayU receipt)"
+                    className="w-full text-xs bg-white/90 border border-emerald-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium text-slate-800"
+                    id="checkout-payu-email-input"
+                  />
+                </div>
               </div>
 
               {/* Order Items Recap */}
@@ -675,118 +719,83 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                  Select Payment Method
-                </label>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('upi')}
-                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                      paymentMethod === 'upi'
-                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-bold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                    id="pay-method-upi"
-                  >
-                    <Smartphone className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs">UPI / QR</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('card')}
-                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                      paymentMethod === 'card'
-                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-bold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                    id="pay-method-card"
-                  >
-                    <CreditCard className="w-4 h-4 text-slate-700" />
-                    <span className="text-xs">Cards</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('netbanking')}
-                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                      paymentMethod === 'netbanking'
-                        ? 'border-blue-600 bg-blue-50/50 text-blue-900 font-bold'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                    id="pay-method-netbanking"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs">NetBanking</span>
-                  </button>
-                </div>
-
-                {paymentMethod === 'upi' && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-                    <span className="text-[11px] font-semibold text-slate-600 block">Enter UPI ID (GPay / PhonePe / Paytm)</span>
-                    <input
-                      type="text"
-                      value={upiId}
-                      onChange={e => setUpiId(e.target.value)}
-                      placeholder="username@okhdfcbank"
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-[10px] text-slate-400 block">Test Simulator: Any UPI ID will instantly authorize</span>
-                  </div>
-                )}
-
-                {paymentMethod === 'card' && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-                    <input
-                      type="text"
-                      placeholder="Card Number (4444 8888 1234 5678)"
-                      defaultValue="4444 8888 1234 5678"
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="text" placeholder="MM/YY" defaultValue="12/28" className="px-3 py-2 bg-white border border-slate-300 rounded-lg" />
-                      <input type="text" placeholder="CVV" defaultValue="890" className="px-3 py-2 bg-white border border-slate-300 rounded-lg" />
+              {/* PayU Gateway Highlight Box */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50/50 border border-blue-200/90 rounded-2xl p-4 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                      <QrCode className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">PayU Payment Gateway</h4>
+                      <p className="text-[10px] text-blue-700 font-semibold">Test Sandbox • UPI QR, Cards & NetBanking</p>
                     </div>
                   </div>
-                )}
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300">
+                    Live SHA512
+                  </span>
+                </div>
 
-                {paymentMethod === 'netbanking' && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
-                    Popular Banks: HDFC Bank, ICICI Bank, SBI, Axis Bank (Simulated instant redirect).
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Clicking <strong>Pay Now</strong> calls our backend (<code className="text-[10px] bg-white px-1 py-0.5 rounded border border-blue-200 font-mono">/api/payment-hash</code>) to securely generate your PayU signature hash and redirects directly to the PayU checkout page.
+                </p>
+
+                {payuError && (
+                  <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-2.5 rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span className="font-medium">{payuError}</span>
                   </div>
                 )}
-              </div>
 
-              {/* Pay Button */}
-              <div className="space-y-2.5 pt-2">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full justify-center text-sm font-bold shadow-md bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl cursor-pointer"
-                  onClick={handleExecutePayment}
-                  disabled={isProcessing}
-                  id="checkout-execute-pay-btn"
-                >
-                  {isProcessing ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Authorizing Secure Payment...
-                    </span>
-                  ) : (
-                    `Pay ₹${totalAmount} & Unlock All Products`
-                  )}
-                </Button>
+                {/* Primary PayU Action Button */}
                 <button
-                  onClick={() => setStep('cart')}
-                  className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                  type="button"
+                  onClick={handlePayUNow}
+                  disabled={isPayuRedirecting}
+                  className="w-full bg-[#0B192C] hover:bg-blue-900 active:bg-[#071220] text-white py-3 px-4 rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                  id="payu-direct-checkout-btn"
                 >
-                  ← Back to Cart
+                  {isPayuRedirecting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Generating Hash & Redirecting to PayU...</span>
+                    </>
+                  ) : (
+                    <>
+                      <QrCode className="w-4 h-4 text-emerald-400" />
+                      <span>Pay Now with PayU (₹{totalAmount}) →</span>
+                    </>
+                  )}
                 </button>
               </div>
+
+              {/* Alternative / Offline Test Simulator Option */}
+              <div className="pt-1">
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-slate-200"></div>
+                  <span className="flex-shrink mx-2 text-[10px] uppercase font-bold text-slate-400">or Instant Preview Simulator</span>
+                  <div className="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-center text-xs font-semibold text-slate-700 py-2.5 rounded-xl cursor-pointer hover:bg-slate-100"
+                  onClick={handleExecutePayment}
+                  disabled={isProcessing}
+                  id="checkout-instant-simulator-btn"
+                >
+                  {isProcessing ? 'Authorizing instant simulation...' : `Instant Simulator Pass (₹${totalAmount})`}
+                </Button>
+              </div>
+
+              {/* Back button */}
+              <button
+                onClick={() => setStep('cart')}
+                className="w-full py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer text-center"
+              >
+                ← Back to Cart
+              </button>
             </div>
           )}
 

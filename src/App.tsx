@@ -17,7 +17,7 @@ import { FinalAssessmentScreen } from './screens/FinalAssessment';
 import { MyLearningScreen } from './screens/MyLearning';
 import { LibraryScreen } from './screens/Library';
 import { CertificateScreen } from './screens/Certificate';
-import { useEnrollmentState, useCartState, enrollmentStore } from './lib/enrollmentStore';
+import { useEnrollmentState, useCartState, enrollmentStore, cartStore } from './lib/enrollmentStore';
 import { 
   ShieldCheck, 
   Search, 
@@ -53,8 +53,9 @@ function AppLayout() {
   const [verifyInput, setVerifyInput] = useState('');
   const [verifyResult, setVerifyResult] = useState<any>(null);
   const [verifySearched, setVerifySearched] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<{ type: 'success' | 'failed'; message: string; txnid?: string } | null>(null);
 
-  // Check URL hash for direct verification links like #verify=SG-CERT-884912
+  // Check URL hash for direct verification links like #verify=SG-CERT-884912 and PayU return parameters
   React.useEffect(() => {
     const handleHashCheck = () => {
       const hash = window.location.hash;
@@ -70,7 +71,36 @@ function AppLayout() {
       }
     };
 
+    const handleQueryParamsCheck = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment');
+      const txnid = urlParams.get('txnid');
+
+      if (paymentStatus === 'success') {
+        // Unlock items in cart
+        const cart = cartStore.getCart();
+        if (cart.length > 0) {
+          cartStore.checkoutOrder('upi');
+        }
+        setPaymentNotice({
+          type: 'success',
+          message: 'PayU Payment Successful! Your course access is activated.',
+          txnid: txnid || undefined
+        });
+        // Clean URL search params without reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (paymentStatus === 'failed') {
+        setPaymentNotice({
+          type: 'failed',
+          message: 'PayU Payment was cancelled or could not be completed.',
+          txnid: txnid || undefined
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+
     handleHashCheck();
+    handleQueryParamsCheck();
     window.addEventListener('hashchange', handleHashCheck);
     return () => window.removeEventListener('hashchange', handleHashCheck);
   }, []);
@@ -337,6 +367,26 @@ function AppLayout() {
               <p className="text-[11px] text-slate-400">SkillGo • Practical Skill Platform</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Payment Notice Notification Banner */}
+      {paymentNotice && (
+        <div className={`py-3 px-4 text-center text-xs font-semibold flex items-center justify-center gap-3 transition-all ${
+          paymentNotice.type === 'success' 
+            ? 'bg-emerald-600 text-white shadow-sm' 
+            : 'bg-rose-600 text-white shadow-sm'
+        }`}>
+          <span>{paymentNotice.message}</span>
+          {paymentNotice.txnid && (
+            <span className="font-mono text-[11px] opacity-85">Txn: {paymentNotice.txnid}</span>
+          )}
+          <button 
+            onClick={() => setPaymentNotice(null)}
+            className="ml-2 text-white/80 hover:text-white underline cursor-pointer text-[11px]"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
