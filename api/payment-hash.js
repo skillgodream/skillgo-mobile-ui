@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     // 3. Clean and sanitize all parameter values to guarantee identical representation in hash & form
     const cleanTxnid = (txnid && String(txnid).trim().length > 0)
       ? String(txnid).trim()
-      : `SG_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
+      : ('TXN-' + Date.now() + '-' + Math.floor(Math.random() * 999999));
     
     // Amount must strictly be a 2-decimal number string (e.g., "199.00", "29.00")
     const numAmount = parseFloat(String(amount));

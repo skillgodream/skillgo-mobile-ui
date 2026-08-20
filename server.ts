@@ -55,7 +55,7 @@ async function startServer() {
 
       const cleanTxnid = (txnid && String(txnid).trim().length > 0)
         ? String(txnid).trim()
-        : `SG_${Date.now()}_${Math.random().toString(36).substring(2, 8).toUpperCase()}${Math.floor(100 + Math.random() * 900)}`;
+        : ('TXN-' + Date.now() + '-' + Math.floor(Math.random() * 999999));
       const numAmount = parseFloat(String(amount));
       if (isNaN(numAmount) || numAmount <= 0) {
         return res.status(400).json({ error: 'Invalid amount supplied.' });
