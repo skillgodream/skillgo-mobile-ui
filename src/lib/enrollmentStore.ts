@@ -13,50 +13,31 @@ const STORAGE_KEYS = {
   PURCHASED_LIBRARY: 'skillgo_purchased_library_v1',
 };
 
-const DEFAULT_PROFILE: LearnerProfile = {
-  name: 'Vikram Sharma',
-  email: 'vikram.sharma@example.com',
-  phone: '+91 98765 43210',
-  city: 'Gurugram, Haryana',
+const GUEST_PROFILE: LearnerProfile = {
+  id: 'USR-GUEST',
+  name: 'Learner',
+  email: 'learner@skillgo.in',
+  phone: '',
+  city: 'Delhi NCR',
   education: 'Graduate / Diploma',
   experienceLevel: 'Entry to 1 Year'
 };
 
-// Initial demo enrollment for preview so user can test "Continue Learning" or test clean state
-const INITIAL_DEMO_ENROLLMENT: Enrollment = {
-  id: 'enr-demo-101',
-  roleId: 'warehouse-associate-qc',
-  skillId: 'logistics-supply-chain',
-  plan: 'pro',
-  enrollmentDate: new Date().toISOString().split('T')[0],
-  completedModules: ['mod-1'],
-  currentModuleId: 'mod-2',
-  quizScores: {
-    'mod-1': 85
-  },
-  practicalBooked: false,
-  isCompleted: false
-};
-
-const DEFAULT_SAMPLE_CERT: CertificateRecord = {
-  id: 'SG-CERT-884912',
-  enrollmentId: 'enr-demo-101',
-  learnerId: 'USR-8849',
-  candidateName: 'Vikram Sharma',
-  skillId: 'logistics-supply-chain',
-  skillCategory: 'Logistics & Supply Chain',
-  roleId: 'warehouse-associate-qc',
-  roleTitle: 'Warehouse Associate',
-  plan: 'pro',
-  issueDate: '2026-08-15',
-  grade: 'A+ (Distinction)',
-  scoreAvg: 92,
-  assessmentScore: 92,
-  practicalCompleted: true,
-  verificationCode: 'VERIFY-SG-4A82X9',
-  verificationStatus: 'valid',
-  isValid: true
-};
+function clearAllCookies(): void {
+  try {
+    if (typeof document !== 'undefined' && document.cookie) {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
+    }
+  } catch (err) {
+    console.warn('Cookie cleanup warning:', err);
+  }
+}
 
 function getStorageItem<T>(key: string, fallback: T): T {
   try {
@@ -72,6 +53,7 @@ function setStorageItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event('skillgo_storage_update'));
+    window.dispatchEvent(new Event('storage'));
   } catch (err) {
     console.error('Failed to save to localStorage', err);
   }
@@ -91,25 +73,78 @@ export const enrollmentStore = {
     setStorageItem(STORAGE_KEYS.REGISTERED, false);
   },
 
-  completeOnboarding(details: { name: string; phone: string; city: string }): void {
-    const current = this.getProfile();
-    setStorageItem(STORAGE_KEYS.PROFILE, {
-      ...current,
-      name: details.name.trim(),
-      phone: details.phone.startsWith('+91') ? details.phone : `+91 ${details.phone.trim()}`,
-      city: details.city.trim(),
-    });
+  /**
+   * Clears old storage/cookies and generates a brand-new unique user profile & fresh cart session
+   */
+  completeOnboarding(
+    details: { name: string; phone: string; city: string; email?: string },
+    initialCartItems: CartItem[] = []
+  ): LearnerProfile {
+    // 1. Wipe old local storage data, cookies, and cached user states
+    try {
+      localStorage.clear();
+      clearAllCookies();
+    } catch (e) {
+      console.warn('Storage wipe warning:', e);
+    }
+
+    // 2. Generate brand-new unique user profile details
+    const cleanName = details.name.trim() || 'Learner';
+    const cleanPhoneDigits = details.phone.replace(/\D/g, '');
+    const cleanPhone = cleanPhoneDigits.length === 10 ? `+91 ${cleanPhoneDigits}` : details.phone.trim();
+    const cleanCity = details.city.trim() || 'Delhi NCR';
+    
+    const emailPrefix = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'learner';
+    const cleanEmail = details.email?.trim() || `${emailPrefix}${Math.floor(100 + Math.random() * 900)}@gmail.com`;
+    const uniqueLearnerId = `USR-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    const freshProfile: LearnerProfile = {
+      id: uniqueLearnerId,
+      name: cleanName,
+      email: cleanEmail,
+      phone: cleanPhone,
+      city: cleanCity,
+      education: 'Graduate / Diploma',
+      experienceLevel: 'Entry to 1 Year'
+    };
+
+    // 3. Initialize clean state structure for the new user
+    setStorageItem(STORAGE_KEYS.PROFILE, freshProfile);
     setStorageItem(STORAGE_KEYS.ONBOARDED, true);
     setStorageItem(STORAGE_KEYS.REGISTERED, true);
+    setStorageItem(STORAGE_KEYS.ENROLLMENTS, []);
+    setStorageItem(STORAGE_KEYS.ACTIVE_ENROLLMENT_ID, null);
+    setStorageItem(STORAGE_KEYS.CERTIFICATES, []);
+    setStorageItem(STORAGE_KEYS.CART, initialCartItems);
+    setStorageItem(STORAGE_KEYS.PURCHASED_LIBRARY, []);
+
+    return freshProfile;
+  },
+
+  resetAllSessionData(): void {
+    try {
+      localStorage.clear();
+      clearAllCookies();
+      window.dispatchEvent(new Event('skillgo_storage_update'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.error('Failed to reset session data', err);
+    }
   },
 
   resetOnboarding(): void {
-    setStorageItem(STORAGE_KEYS.ONBOARDED, false);
-    setStorageItem(STORAGE_KEYS.REGISTERED, false);
+    try {
+      localStorage.clear();
+      clearAllCookies();
+      window.dispatchEvent(new Event('skillgo_storage_update'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.error('Failed to reset onboarding', err);
+    }
   },
 
   getProfile(): LearnerProfile {
-    return getStorageItem<LearnerProfile>(STORAGE_KEYS.PROFILE, DEFAULT_PROFILE);
+    return getStorageItem<LearnerProfile>(STORAGE_KEYS.PROFILE, GUEST_PROFILE);
   },
 
   updateProfile(profile: Partial<LearnerProfile>): void {
@@ -118,7 +153,7 @@ export const enrollmentStore = {
   },
 
   getEnrollments(): Enrollment[] {
-    return getStorageItem<Enrollment[]>(STORAGE_KEYS.ENROLLMENTS, [INITIAL_DEMO_ENROLLMENT]);
+    return getStorageItem<Enrollment[]>(STORAGE_KEYS.ENROLLMENTS, []);
   },
 
   getActiveEnrollment(): Enrollment | null {
@@ -319,8 +354,8 @@ export const enrollmentStore = {
     const newCert: CertificateRecord = {
       id: permanentId,
       enrollmentId: enrollment.id,
-      learnerId: 'USR-8849',
-      candidateName: profile.name || 'Vikram Sharma',
+      learnerId: profile.id || `USR-${Math.floor(1000 + Math.random() * 9000)}`,
+      candidateName: profile.name || 'Learner',
       skillId: enrollment.skillId,
       skillCategory: skill?.name || 'Logistics & Supply Chain',
       roleId: enrollment.roleId,
@@ -342,7 +377,7 @@ export const enrollmentStore = {
   },
 
   getCertificates(): CertificateRecord[] {
-    return getStorageItem<CertificateRecord[]>(STORAGE_KEYS.CERTIFICATES, [DEFAULT_SAMPLE_CERT]);
+    return getStorageItem<CertificateRecord[]>(STORAGE_KEYS.CERTIFICATES, []);
   },
 
   verifyCertificate(codeOrId: string): CertificateRecord | null {

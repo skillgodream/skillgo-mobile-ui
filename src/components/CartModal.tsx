@@ -54,16 +54,16 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
 
   const [step, setStep] = useState<'cart' | 'register' | 'checkout' | 'success'>(initialStep);
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
-  const [upiId, setUpiId] = useState('vikram@okaxis');
+  const [upiId, setUpiId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
-  const [userEmail, setUserEmail] = useState(profile?.email || 'vikramsharrma83@gmail.com');
+  const [userEmail, setUserEmail] = useState(profile?.email && profile.email !== 'learner@skillgo.in' ? profile.email : '');
   const [isPayuRedirecting, setIsPayuRedirecting] = useState(false);
   const [payuError, setPayuError] = useState<string | null>(null);
 
-  // Mandatory Registration Form States (used when user skipped onboarding)
-  const [regName, setRegName] = useState(profile?.name && profile.name !== 'Vikram Sharma' ? profile.name : '');
-  const [regPhone, setRegPhone] = useState(profile?.phone && profile.phone !== '+91 98765 43210' ? profile.phone.replace('+91', '').trim() : '');
+  // Mandatory Registration Form States (used when user skipped onboarding or needs registration)
+  const [regName, setRegName] = useState(profile?.name && profile.name !== 'Learner' ? profile.name : '');
+  const [regPhone, setRegPhone] = useState(profile?.phone ? profile.phone.replace('+91', '').trim() : '');
   const [regCity, setRegCity] = useState(profile?.city || 'Delhi NCR');
   const [regCustomCity, setRegCustomCity] = useState('');
   const [regOtp, setRegOtp] = useState<string[]>(['4', '2', '8', '9', '0', '1']);
@@ -75,7 +75,7 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Sync step when reopened
+  // Sync step & profile when reopened
   useEffect(() => {
     if (isOpen) {
       if (initialStep === 'checkout' && !enrollmentStore.isRegistered()) {
@@ -85,8 +85,17 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       }
       setIsProcessing(false);
       setRegErrors({});
+      if (profile?.name && profile.name !== 'Learner') {
+        setRegName(profile.name);
+      }
+      if (profile?.phone) {
+        setRegPhone(profile.phone.replace('+91', '').trim());
+      }
+      if (profile?.email && profile.email !== 'learner@skillgo.in') {
+        setUserEmail(profile.email);
+      }
     }
-  }, [isOpen, initialStep]);
+  }, [isOpen, initialStep, profile]);
 
   // Timer countdown for registration OTP
   useEffect(() => {
@@ -194,12 +203,18 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       return;
     }
 
-    // Save registration in store
-    enrollmentStore.completeOnboarding({
+    // Save registration in store with full storage wipe, unique profile generation, and fresh cart session
+    const currentCartSnapshot = [...cart];
+    const newProfile = enrollmentStore.completeOnboarding({
       name: regName.trim(),
       phone: cleanPhone,
-      city: effectiveCity.trim()
-    });
+      city: effectiveCity.trim(),
+      email: userEmail.trim() || undefined
+    }, currentCartSnapshot);
+
+    if (!userEmail.trim() && newProfile.email) {
+      setUserEmail(newProfile.email);
+    }
 
     // Move to payment checkout step
     setRegErrors({});
@@ -220,14 +235,37 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
     try {
       setIsPayuRedirecting(true);
       setPayuError(null);
-      const candidateName = profile.name || regName || 'Vikram Sharma';
-      const candidatePhone = profile.phone || regPhone || '9876543210';
-      const candidateEmail = userEmail.trim() || `${candidateName.toLowerCase().replace(/\s+/g, '')}@gmail.com`;
-      const productTitles = cart.map(i => i.title).join(', ').slice(0, 80) || 'SkillGo Certification Track';
+
+      // 1. Extract fresh candidate profile & credentials dynamically
+      const latestProfile = enrollmentStore.getProfile();
+      const candidateName = (latestProfile.name && latestProfile.name !== 'Learner')
+        ? latestProfile.name
+        : (regName.trim() || 'Learner');
+
+      const candidatePhone = (latestProfile.phone && latestProfile.phone.replace(/\D/g, '').length >= 10)
+        ? latestProfile.phone.replace(/\D/g, '')
+        : (regPhone.replace(/\D/g, '') || '9876543210');
+
+      const emailPrefix = candidateName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'learner';
+      const candidateEmail = userEmail.trim() || (latestProfile.email && latestProfile.email !== 'learner@skillgo.in' ? latestProfile.email : `${emailPrefix}${Math.floor(100 + Math.random() * 900)}@gmail.com`);
+
+      // 2. Generate completely unique dynamic Transaction ID on every single click
+      const dynamicTxnid = 'TXN-' + Date.now() + '-' + Math.floor(100000 + Math.random() * 900000);
+
+      // 3. Build dynamic productinfo from current cart items with order suffix to avoid duplicates
+      const cartTitles = cart.map(i => i.title).filter(Boolean);
+      const baseProductTitle = cartTitles.length > 0 
+        ? cartTitles.join(', ').slice(0, 60) 
+        : 'SkillGo Certification Course';
+      const dynamicProductInfo = `${baseProductTitle} Order ${dynamicTxnid.slice(-6)}`;
+
+      // 4. Clean dynamic numeric total amount
+      const dynamicAmount = totalAmount > 0 ? totalAmount : 199.00;
 
       await initiatePayUPayment({
-        amount: totalAmount,
-        productinfo: productTitles,
+        txnid: dynamicTxnid,
+        amount: dynamicAmount,
+        productinfo: dynamicProductInfo,
         firstname: candidateName,
         email: candidateEmail,
         phone: candidatePhone
@@ -663,10 +701,10 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
                     </div>
                     <div className="truncate">
                       <span className="text-xs font-bold text-slate-900 block truncate">
-                        Learner: {profile.name || regName || 'Vikram Sharma'}
+                        Learner: {(profile.name && profile.name !== 'Learner') ? profile.name : (regName || 'Learner')}
                       </span>
                       <span className="text-[11px] text-slate-500 block truncate">
-                        {profile.phone || regPhone || '+91 98765 43210'} • {profile.city || regCity || 'Delhi NCR'}
+                        {profile.phone || (regPhone ? `+91 ${regPhone}` : '')} • {profile.city || regCity || 'Delhi NCR'}
                       </span>
                     </div>
                   </div>
