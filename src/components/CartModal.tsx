@@ -236,7 +236,10 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       setIsPayuRedirecting(true);
       setPayuError(null);
 
-      // 1. Extract fresh candidate profile & credentials dynamically
+      // 1. Generate aggressively randomized transaction ID string on every single button click
+      const dynamicTxnid = 'TXN-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
+
+      // 2. Extract fresh candidate profile & credentials dynamically
       const latestProfile = enrollmentStore.getProfile();
       const candidateName = (latestProfile.name && latestProfile.name !== 'Learner')
         ? latestProfile.name
@@ -249,15 +252,12 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       const emailPrefix = candidateName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'learner';
       const candidateEmail = userEmail.trim() || (latestProfile.email && latestProfile.email !== 'learner@skillgo.in' ? latestProfile.email : `${emailPrefix}${Math.floor(100 + Math.random() * 900)}@gmail.com`);
 
-      // 2. Generate completely unique dynamic Transaction ID on every single click
-      const dynamicTxnid = 'TXN-' + Date.now() + '-' + Math.floor(100000 + Math.random() * 900000);
-
-      // 3. Build dynamic productinfo from current cart items with order suffix to avoid duplicates
+      // 3. Build dynamic productinfo from current cart items
       const cartTitles = cart.map(i => i.title).filter(Boolean);
       const baseProductTitle = cartTitles.length > 0 
         ? cartTitles.join(', ').slice(0, 60) 
         : 'SkillGo Certification Course';
-      const dynamicProductInfo = `${baseProductTitle} Order ${dynamicTxnid.slice(-6)}`;
+      const dynamicProductInfo = `${baseProductTitle} Order ${dynamicTxnid.slice(-5)}`;
 
       // 4. Clean dynamic numeric total amount
       const dynamicAmount = totalAmount > 0 ? totalAmount : 199.00;

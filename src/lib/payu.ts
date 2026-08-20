@@ -40,20 +40,20 @@ export interface PayUHashResponse {
  * to guarantee PayU registers every attempt as a fresh transaction request.
  */
 export function generatePayUTxnId(): string {
-  return 'TXN-' + Date.now() + '-' + Math.floor(Math.random() * 999999);
+  return 'TXN-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
 }
 
 /**
  * Initiates the PayU checkout flow:
- * 1. Generates a brand-new, dynamic transaction ID (TXN-<timestamp>-<random>) on every click
+ * 1. Generates an aggressively randomized transaction ID on every click
  * 2. Fetches SHA512 signature hash from backend API (/api/payment-hash)
- * 3. Dynamically generates an HTML POST form and auto-submits directly to PayU Checkout
+ * 3. Dynamically generates a hidden HTML POST form and auto-submits directly to PayU Checkout
  */
 export async function initiatePayUPayment(params: PayUPaymentParams): Promise<void> {
-  // Always create a dynamic txnid using the current exact millisecond timestamp plus a large random number/string
+  // Generate aggressive random transaction ID string
   const txnid = (params.txnid && params.txnid.trim().length > 0)
     ? params.txnid.trim()
-    : ('TXN-' + Date.now() + '-' + Math.floor(Math.random() * 999999));
+    : ('TXN-' + Date.now() + '-' + Math.floor(Math.random() * 99999));
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
@@ -103,7 +103,7 @@ export async function initiatePayUPayment(params: PayUPaymentParams): Promise<vo
     existingForm.remove();
   }
 
-  // 2. Build and auto-submit form targeting PayU actionUrl (https://test.payu.in/_payment)
+  // 2. Build and auto-submit hidden form targeting PayU actionUrl
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = hashData.actionUrl || 'https://test.payu.in/_payment';
@@ -140,6 +140,6 @@ export async function initiatePayUPayment(params: PayUPaymentParams): Promise<vo
 
   document.body.appendChild(form);
   
-  // 3. Submit directly to PayU Test Checkout page
+  // 3. Submit directly to PayU Checkout
   form.submit();
 }
