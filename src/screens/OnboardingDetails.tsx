@@ -281,7 +281,7 @@ export function OnboardingDetailsScreen() {
             </>
           ),
           buttonClass: 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-95 shadow-lg shadow-indigo-600/30 text-white',
-          badgeText: step === 3 ? 'Step 3 of 4 • Phone' : 'Step 4 of 4 • OTP'
+          badgeText: step === 3 ? 'Step 3 of 4 • Mobile Number' : 'Step 4 of 4 • OTP'
         };
     }
   };
@@ -291,11 +291,10 @@ export function OnboardingDetailsScreen() {
   return (
     <div className={`min-h-screen relative overflow-hidden flex flex-col justify-between ${theme.bgGradient} transition-colors duration-700 selection:bg-white selection:text-indigo-900`} id="onboarding-apple-screen">
       
-      {/* Apple-Style Organic Fluid Mesh Gradient Background Elements */}
       {theme.meshBlobs}
 
       {/* Top Glass Header */}
-      <header className="relative z-20 w-full py-5 px-6 sm:px-12 flex items-center justify-between backdrop-blur-md bg-white/10 border-b border-white/15">
+      <header className="relative z-20 w-full py-4 px-6 sm:px-10 flex items-center justify-between backdrop-blur-md bg-white/10 border-b border-white/15">
         <div className="flex items-center gap-3">
           <div className="bg-white/90 p-2 rounded-xl shadow-sm">
             <SkillGoLogo />
@@ -329,13 +328,13 @@ export function OnboardingDetailsScreen() {
         </div>
       </header>
 
-      {/* Main Content Area - Small Compact Floating Card */}
-      <main className="relative z-20 flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
-        <div className="w-full max-w-[420px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[28px] border border-white/40 p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] transition-all">
+      {/* Main Content Area - Ultra Compact Card */}
+      <main className="relative z-20 flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-[380px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[24px] border border-white/40 p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] transition-all">
           
           {/* Step Badge */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
               <Sparkles className="w-3 h-3 text-amber-500" />
               {theme.badgeText}
             </div>
@@ -347,7 +346,7 @@ export function OnboardingDetailsScreen() {
                   key={s}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
                     s === step 
-                      ? 'w-6 bg-slate-900' 
+                      ? 'w-5 bg-slate-900' 
                       : s < step 
                       ? 'w-1.5 bg-emerald-500' 
                       : 'w-1.5 bg-slate-200'
@@ -361,12 +360,12 @@ export function OnboardingDetailsScreen() {
           {/* STEP 1: NAME */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 1 && (
-            <form onSubmit={handleNextFromStep1} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+            <form onSubmit={handleNextFromStep1} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                What's your full name?
+                Name
               </h1>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <User className="w-4 h-4" />
@@ -379,7 +378,7 @@ export function OnboardingDetailsScreen() {
                       setName(e.target.value);
                       setError(null);
                     }}
-                    placeholder="e.g. Rahul Sharma"
+                    placeholder="Enter your full name"
                     className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50/80 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 font-medium transition-all"
                     autoFocus
                   />
@@ -387,14 +386,14 @@ export function OnboardingDetailsScreen() {
               </div>
 
               {error && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
                   {error}
                 </p>
               )}
 
               <button
                 type="submit"
-                className={`w-full py-3.5 px-5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
               >
                 <span>Continue</span>
                 <ArrowRight className="w-4 h-4" />
@@ -406,12 +405,12 @@ export function OnboardingDetailsScreen() {
           {/* STEP 2: CITY */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 2 && (
-            <form onSubmit={handleNextFromStep2} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+            <form onSubmit={handleNextFromStep2} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Which city are you in?
+                City
               </h1>
 
-              <div className="space-y-1.5 relative">
+              <div className="space-y-1 relative">
                 <button
                   type="button"
                   onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
@@ -421,7 +420,7 @@ export function OnboardingDetailsScreen() {
                     <MapPin className="w-4 h-4" />
                   </div>
                   <span className={city ? 'text-slate-900 font-bold' : 'text-slate-400'}>
-                    {city || 'Select your city'}
+                    {city || 'Select city'}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -429,7 +428,7 @@ export function OnboardingDetailsScreen() {
                 {/* City Dropdown Menu */}
                 {isCityDropdownOpen && (
                   <div className="absolute z-30 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    <div className="p-2.5 border-b border-slate-100 bg-slate-50">
+                    <div className="p-2 border-b border-slate-100 bg-slate-50">
                       <div className="relative">
                         <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -443,7 +442,7 @@ export function OnboardingDetailsScreen() {
                       </div>
                     </div>
                     
-                    <div className="max-h-48 overflow-y-auto p-1">
+                    <div className="max-h-40 overflow-y-auto p-1">
                       {citySearch && !filteredCities.includes(citySearch) && (
                         <button
                           type="button"
@@ -473,35 +472,17 @@ export function OnboardingDetailsScreen() {
                     </div>
                   </div>
                 )}
-
-                {/* Quick Chips */}
-                <div className="pt-1 flex flex-wrap items-center gap-1">
-                  {['Delhi NCR', 'Bengaluru', 'Mumbai', 'Pune'].map((quickCity) => (
-                    <button
-                      key={quickCity}
-                      type="button"
-                      onClick={() => handleCitySelect(quickCity)}
-                      className={`text-[11px] px-2.5 py-1 rounded-md border font-semibold transition-all cursor-pointer ${
-                        city === quickCity 
-                          ? 'bg-emerald-600 text-white border-emerald-600' 
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {quickCity}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {error && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
                   {error}
                 </p>
               )}
 
               <button
                 type="submit"
-                className={`w-full py-3.5 px-5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
               >
                 <span>Continue</span>
                 <ArrowRight className="w-4 h-4" />
@@ -513,12 +494,12 @@ export function OnboardingDetailsScreen() {
           {/* STEP 3: PHONE NUMBER */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 3 && (
-            <form onSubmit={handleNextFromStep3} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+            <form onSubmit={handleNextFromStep3} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Mobile number
+                Mobile Number
               </h1>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="relative flex rounded-xl border border-slate-200 bg-slate-50/80 focus-within:bg-white focus-within:border-indigo-600 focus-within:ring-2 focus-within:ring-indigo-600/20 transition-all overflow-hidden">
                   <div className="flex items-center gap-1 px-3 bg-slate-100 border-r border-slate-200 text-slate-800 font-bold text-xs select-none">
                     <span>🇮🇳</span>
@@ -549,16 +530,16 @@ export function OnboardingDetailsScreen() {
               </div>
 
               {error && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
                   {error}
                 </p>
               )}
 
               <button
                 type="submit"
-                className={`w-full py-3.5 px-5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
               >
-                <span>Send OTP Code</span>
+                <span>Send OTP</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -568,21 +549,20 @@ export function OnboardingDetailsScreen() {
           {/* STEP 4: OTP VERIFICATION */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 4 && (
-            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div>
-                <div className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded mb-1.5">
-                  <Lock className="w-3 h-3" />
-                  +91 {phone}
-                </div>
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="flex items-center justify-between">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Enter 6-digit OTP
+                  OTP
                 </h1>
+                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                  +91 {phone}
+                </span>
               </div>
 
               {resendSuccess && (
-                <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-2 border border-emerald-200">
+                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-200">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>OTP sent successfully</span>
+                  <span>OTP sent</span>
                 </div>
               )}
 
@@ -600,7 +580,7 @@ export function OnboardingDetailsScreen() {
                     disabled={isOtpVerified || isVerifyingOtp}
                     onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className={`w-10 h-12 text-center text-lg font-black rounded-xl border transition-all ${
+                    className={`w-9 h-11 text-center text-base font-black rounded-xl border transition-all ${
                       isOtpVerified
                         ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
                         : digit 
@@ -612,19 +592,19 @@ export function OnboardingDetailsScreen() {
               </div>
 
               {(otpError || error) && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
                   {otpError || error}
                 </p>
               )}
 
               {isVerifyingOtp && (
                 <div className="text-center text-xs font-bold text-indigo-600 animate-pulse">
-                  Verifying OTP securely...
+                  Verifying...
                 </div>
               )}
 
               {isOtpVerified && (
-                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-extrabold flex items-center justify-center gap-2 border border-emerald-200">
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-200">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>Verified! Launching...</span>
                 </div>
@@ -638,7 +618,7 @@ export function OnboardingDetailsScreen() {
                       onClick={handleResendOtp}
                       className="font-bold text-indigo-600 hover:underline cursor-pointer"
                     >
-                      Resend OTP
+                      Resend
                     </button>
                   ) : (
                     <span className="text-slate-400 font-medium">
@@ -660,7 +640,7 @@ export function OnboardingDetailsScreen() {
                 type="button"
                 onClick={() => triggerVerifyOtp(otp.join(''))}
                 disabled={otp.join('').length < 6 || isVerifyingOtp || isOtpVerified}
-                className={`w-full py-3.5 px-5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   otp.join('').length === 6 && !isOtpVerified
                     ? theme.buttonClass
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
@@ -676,8 +656,8 @@ export function OnboardingDetailsScreen() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-20 py-4 text-center text-[11px] text-white/70 backdrop-blur-md bg-white/5 border-t border-white/10">
-        SkillGo • Bank-Grade Secure Supabase Auth
+      <footer className="relative z-20 py-3 text-center text-[11px] text-white/70 backdrop-blur-md bg-white/5 border-t border-white/10">
+        SkillGo • Secure Supabase Auth
       </footer>
 
     </div>
