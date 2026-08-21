@@ -263,7 +263,7 @@ function AppLayout() {
                 title="Profile Settings"
               >
                 <div className="w-8 h-8 rounded-full bg-[#E0EDFB] text-[#1E73E8] flex items-center justify-center font-bold text-xs">
-                  SG
+                  {(profile.name || 'Vikram Sharma').slice(0, 2).toUpperCase()}
                 </div>
               </button>
 
@@ -298,7 +298,7 @@ function AppLayout() {
             {/* User Profile Card Snippet */}
             <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                SG
+                {(profile.name || 'Vikram Sharma').slice(0, 2).toUpperCase()}
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-slate-900 text-sm truncate">{profile.name || 'Vikram Sharma'}</div>
@@ -617,7 +617,7 @@ function AppLayout() {
         <div className="space-y-4 text-sm text-slate-700">
           <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
             <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 font-black text-base flex items-center justify-center">
-              SG
+              {(profile.name || 'Vikram Sharma').slice(0, 2).toUpperCase()}
             </div>
             <div>
               <h4 className="font-bold text-slate-900">{profile.name}</h4>
