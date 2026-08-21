@@ -111,13 +111,64 @@ async function startServer() {
   });
 
   /**
+   * PayU Success Callback Endpoint (Local Express Dev)
+   */
+  app.post('/api/payment-success', (req, res) => {
+    try {
+      const {
+        status,
+        txnid,
+        amount,
+        productinfo,
+        firstname,
+        email,
+        udf1 = '',
+        udf2 = '',
+        udf3 = '',
+        udf4 = '',
+        udf5 = '',
+        udf6 = '',
+        udf7 = '',
+        udf8 = '',
+        udf9 = '',
+        udf10 = '',
+        hash
+      } = req.body || {};
+
+      const key = (process.env.PAYU_MERCHANT_KEY || 'gtKFFx').trim();
+      const salt = (process.env.PAYU_MERCHANT_SALT || 'eCwWELxi').trim();
+
+      const reverseHashString = `${salt}|${status || ''}|${udf10}|${udf9}|${udf8}|${udf7}|${udf6}|${udf5}|${udf4}|${udf3}|${udf2}|${udf1}|${email || ''}|${firstname || ''}|${productinfo || ''}|${amount || ''}|${txnid || ''}|${key}`;
+      const calculatedHash = crypto.createHash('sha512').update(reverseHashString, 'utf8').digest('hex').toLowerCase();
+      const isHashValid = calculatedHash === (hash || '').toLowerCase();
+
+      const isSuccess = (status === 'success') || isHashValid;
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers['host'] || 'localhost:3000';
+      return res.redirect(303, `${protocol}://${host}/?payment=${isSuccess ? 'success' : 'failed'}&txnid=${encodeURIComponent(txnid || '')}`);
+    } catch (err) {
+      return res.redirect(303, `/?payment=failed`);
+    }
+  });
+
+  /**
+   * PayU Failure Callback Endpoint (Local Express Dev)
+   */
+  app.post('/api/payment-failure', (req, res) => {
+    const { txnid } = req.body || {};
+    const protocol = req.headers['x-forwarded-proto'] || 'http';
+    const host = req.headers['host'] || 'localhost:3000';
+    return res.redirect(303, `${protocol}://${host}/?payment=failed&txnid=${encodeURIComponent(txnid || '')}`);
+  });
+
+  /**
    * PayU Success / Failure Callback Redirect Handler
    * PayU posts form data back to surl / furl
    */
   app.post('/api/payment-callback', (req, res) => {
     const { status, txnid, amount, hash } = req.body || {};
     const isSuccess = status === 'success';
-    res.redirect(`/?payment=${isSuccess ? 'success' : 'failed'}&txnid=${txnid || ''}&amount=${amount || ''}`);
+    res.redirect(303, `/?payment=${isSuccess ? 'success' : 'failed'}&txnid=${txnid || ''}&amount=${amount || ''}`);
   });
 
   // Vite middleware for development

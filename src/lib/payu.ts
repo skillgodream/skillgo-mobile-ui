@@ -56,10 +56,9 @@ export async function initiatePayUPayment(params: PayUPaymentParams): Promise<vo
     : ('TXN-' + Date.now() + '-' + Math.floor(Math.random() * 99999));
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
   
-  const surl = params.surl || `${origin}${currentPath}?payment=success&txnid=${txnid}`;
-  const furl = params.furl || `${origin}${currentPath}?payment=failed&txnid=${txnid}`;
+  const surl = params.surl || `${origin}/api/payment-success`;
+  const furl = params.furl || `${origin}/api/payment-failure`;
 
   const payload = {
     txnid,
