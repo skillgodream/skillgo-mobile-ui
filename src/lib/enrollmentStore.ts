@@ -133,14 +133,15 @@ export const enrollmentStore = {
     }
   },
 
-  resetOnboarding(): void {
+  logout(): void {
     try {
-      localStorage.clear();
-      clearAllCookies();
+      localStorage.removeItem(STORAGE_KEYS.ONBOARDED);
+      localStorage.removeItem(STORAGE_KEYS.REGISTERED);
+      localStorage.removeItem(STORAGE_KEYS.PROFILE);
       window.dispatchEvent(new Event('skillgo_storage_update'));
       window.dispatchEvent(new Event('storage'));
     } catch (err) {
-      console.error('Failed to reset onboarding', err);
+      console.error('Failed to logout session', err);
     }
   },
 

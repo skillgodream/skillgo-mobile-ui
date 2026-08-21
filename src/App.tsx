@@ -39,7 +39,10 @@ import {
   Home,
   TrendingUp,
   Receipt,
-  ArrowRight
+  ArrowRight,
+  HelpCircle,
+  LogOut,
+  Settings
 } from 'lucide-react';
 import { CartModal } from './components/CartModal';
 
@@ -680,6 +683,85 @@ function AppLayout() {
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors shrink-0" />
             </div>
+          </div>
+
+          {/* Account / Settings Section */}
+          <div className="pt-2 border-t border-slate-100 space-y-1">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 flex items-center gap-1.5">
+              <Settings className="w-3.5 h-3.5" />
+              <span>Account / Settings</span>
+            </div>
+            <button
+              onClick={() => { setProfileModalOpen(false); navigate('my-learning'); }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <span>My Learning</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => { setProfileModalOpen(false); navigate('certificate'); }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <Award className="w-4 h-4 text-amber-600" />
+                <span>My Certificates</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => { setProfileModalOpen(false); navigate('my-learning'); }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <span>My Progress</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => { setProfileModalOpen(false); navigate('support'); }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <HelpCircle className="w-4 h-4 text-purple-600" />
+                <span>Help & Support</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => { 
+                setProfileModalOpen(false); 
+                navigate('home');
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-teal-600" />
+                <span>Privacy Policy</span>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => {
+                setProfileModalOpen(false);
+                enrollmentStore.logout();
+                navigate('onboarding-details');
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer mt-1"
+            >
+              <div className="flex items-center gap-2.5">
+                <LogOut className="w-4 h-4 text-rose-600" />
+                <span>Logout</span>
+              </div>
+            </button>
           </div>
         </div>
       </Modal>

@@ -43,8 +43,9 @@ interface RouterContextType {
 const RouterContext = createContext<RouterContextType | null>(null);
 
 const getInitialRouteState = (): RouteState => {
+  const onboarded = enrollmentStore.isOnboarded();
   return {
-    screen: 'onboarding-details',
+    screen: onboarded ? 'home' : 'onboarding-details',
     params: {},
   };
 };
