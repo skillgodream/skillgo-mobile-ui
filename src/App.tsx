@@ -159,7 +159,7 @@ function AppLayout() {
   const activeTab = getActiveTab();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FDFDFE] font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
+    <div className={`min-h-screen flex flex-col font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white ${currentRoute.screen === 'home' || currentRoute.screen === 'library' ? 'bg-[#FFF8F9]' : 'bg-[#FDFDFE]'}`}>
       
       {/* 0. PREMIUM ANIMATED SPLASH SCREEN (Initial Load Only) */}
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}

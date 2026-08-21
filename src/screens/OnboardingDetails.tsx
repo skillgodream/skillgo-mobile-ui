@@ -90,7 +90,7 @@ export function OnboardingDetailsScreen() {
   const handleNextFromStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Please enter your full name.');
+      setError('Please enter your full name to proceed.');
       return;
     }
     setError(null);
@@ -116,6 +116,7 @@ export function OnboardingDetailsScreen() {
     }
     setError(null);
 
+    // Send live Supabase OTP
     await sendSupabaseOtp({
       phone: cleanPhone,
       name: name.trim(),
@@ -189,6 +190,7 @@ export function OnboardingDetailsScreen() {
       setIsVerifyingOtp(false);
       setIsOtpVerified(true);
 
+      // Complete onboarding and navigate home
       enrollmentStore.completeOnboarding({
         name: name.trim(),
         phone: phone.trim(),
@@ -227,7 +229,7 @@ export function OnboardingDetailsScreen() {
     setIsCityDropdownOpen(false);
     setCitySearch('');
     setError(null);
-    setStep(3);
+    setStep(3); // Automatically progress to Phone after city selection
   };
 
   const handleSkip = () => {
@@ -239,66 +241,58 @@ export function OnboardingDetailsScreen() {
     c.toLowerCase().includes(citySearch.toLowerCase())
   );
 
-  // Apple-style background mesh gradient themes per step
-  const getStepMeshTheme = () => {
+  // Dynamic Theme Styling based on active step
+  const getStepTheme = () => {
     switch (step) {
       case 1:
         return {
-          bgGradient: 'bg-gradient-to-br from-rose-600 via-pink-600 to-amber-500',
-          meshBlobs: (
-            <>
-              <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-rose-400/50 blur-[120px] pointer-events-none animate-pulse" />
-              <div className="absolute bottom-[-10%] right-[-10%] w-[700px] h-[700px] rounded-full bg-amber-400/40 blur-[140px] pointer-events-none" />
-              <div className="absolute top-[30%] right-[20%] w-[500px] h-[500px] rounded-full bg-pink-500/40 blur-[100px] pointer-events-none" />
-            </>
-          ),
-          buttonClass: 'bg-gradient-to-r from-rose-600 to-pink-600 hover:opacity-95 shadow-lg shadow-rose-600/30 text-white',
-          badgeText: 'Step 1 of 4 • Name'
+          gradient: 'from-rose-500 via-pink-500 to-red-600',
+          bgBlob: 'bg-gradient-to-tr from-rose-400/20 via-pink-300/20 to-orange-200/30',
+          badgeBg: 'bg-rose-50 text-rose-700 border-rose-200',
+          buttonClass: 'bg-gradient-to-r from-rose-500 via-pink-500 to-red-600 hover:opacity-95 shadow-lg shadow-rose-500/25 text-white',
+          stepLabel: 'Step 1 of 4 • Your Name'
         };
       case 2:
         return {
-          bgGradient: 'bg-gradient-to-br from-emerald-600 via-teal-600 to-amber-500',
-          meshBlobs: (
-            <>
-              <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-emerald-400/50 blur-[120px] pointer-events-none animate-pulse" />
-              <div className="absolute bottom-[-10%] left-[-10%] w-[700px] h-[700px] rounded-full bg-amber-300/40 blur-[140px] pointer-events-none" />
-              <div className="absolute top-[40%] left-[20%] w-[500px] h-[500px] rounded-full bg-teal-400/40 blur-[100px] pointer-events-none" />
-            </>
-          ),
-          buttonClass: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 shadow-lg shadow-emerald-600/30 text-white',
-          badgeText: 'Step 2 of 4 • City'
+          gradient: 'from-amber-500 via-orange-500 to-emerald-600',
+          bgBlob: 'bg-gradient-to-tr from-amber-300/20 via-orange-300/20 to-emerald-200/30',
+          badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
+          buttonClass: 'bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-600 hover:opacity-95 shadow-lg shadow-orange-500/25 text-white',
+          stepLabel: 'Step 2 of 4 • Your City'
         };
       case 3:
       case 4:
       default:
         return {
-          bgGradient: 'bg-gradient-to-br from-violet-700 via-indigo-700 to-blue-800',
-          meshBlobs: (
-            <>
-              <div className="absolute top-[-10%] left-[10%] w-[600px] h-[600px] rounded-full bg-purple-500/50 blur-[130px] pointer-events-none animate-pulse" />
-              <div className="absolute bottom-[-10%] right-[-10%] w-[700px] h-[700px] rounded-full bg-blue-500/40 blur-[150px] pointer-events-none" />
-              <div className="absolute top-[30%] left-[30%] w-[500px] h-[500px] rounded-full bg-indigo-500/40 blur-[110px] pointer-events-none" />
-            </>
-          ),
-          buttonClass: 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-95 shadow-lg shadow-indigo-600/30 text-white',
-          badgeText: step === 3 ? 'Step 3 of 4 • Mobile Number' : 'Step 4 of 4 • OTP'
+          gradient: 'from-violet-600 via-purple-600 to-indigo-700',
+          bgBlob: 'bg-gradient-to-tr from-violet-400/20 via-purple-300/20 to-indigo-300/30',
+          badgeBg: 'bg-violet-50 text-violet-700 border-violet-200',
+          buttonClass: 'bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 hover:opacity-95 shadow-lg shadow-purple-600/25 text-white',
+          stepLabel: step === 3 ? 'Step 3 of 4 • Mobile Number' : 'Step 4 of 4 • OTP Verification'
         };
     }
   };
 
-  const theme = getStepMeshTheme();
+  const theme = getStepTheme();
 
   return (
-    <div className={`min-h-screen relative overflow-hidden flex flex-col justify-between ${theme.bgGradient} transition-colors duration-700 selection:bg-white selection:text-indigo-900`} id="onboarding-apple-screen">
+    <div className="min-h-screen bg-[#FDFBF7] relative overflow-hidden flex flex-col justify-between selection:bg-purple-600 selection:text-white" id="onboarding-wizard-screen">
       
-      {theme.meshBlobs}
+      {/* Dynamic Organic Fluid Background Waves & Blobs */}
+      <div className="absolute top-0 right-0 -w-96 -h-96 w-[500px] h-[500px] rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-70 translate-x-1/3 -translate-y-1/3 bg-gradient-to-br from-purple-300/40 via-pink-300/30 to-amber-200/30" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-60 -translate-x-1/3 translate-y-1/3 bg-gradient-to-tr from-rose-200/40 via-indigo-200/30 to-emerald-200/30" />
 
-      {/* Top Glass Header */}
-      <header className="relative z-20 w-full py-4 px-6 sm:px-10 flex items-center justify-between backdrop-blur-md bg-white/10 border-b border-white/15">
+      {/* Organic SVG Wave Header/Footer Accent */}
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none opacity-40 overflow-hidden leading-none z-0">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-24 text-purple-200/40 fill-current">
+          <path d="M0,0 C150,90 350,-40 500,40 C650,120 900,10 1200,50 L1200,120 L0,120 Z"></path>
+        </svg>
+      </div>
+
+      {/* Top Minimal Header */}
+      <header className="relative z-10 w-full py-5 px-6 sm:px-10 flex items-center justify-between border-b border-amber-100/60 bg-white/70 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="bg-white/90 p-2 rounded-xl shadow-sm">
-            <SkillGoLogo />
-          </div>
+          <SkillGoLogo />
         </div>
         
         <div className="flex items-center gap-3">
@@ -310,7 +304,7 @@ export function OnboardingDetailsScreen() {
                 else if (step === 3) setStep(2);
                 else if (step === 4) setStep(3);
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/20 px-3.5 py-2 rounded-full transition-all backdrop-blur-md cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-full transition-all shadow-sm cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -320,36 +314,36 @@ export function OnboardingDetailsScreen() {
           <button
             type="button"
             onClick={handleSkip}
-            className="text-xs font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 px-4 py-2 rounded-full transition-all backdrop-blur-md cursor-pointer shadow-sm"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-900 bg-white/80 hover:bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shadow-sm"
             id="top-skip-button"
           >
-            Skip →
+            Skip to Home →
           </button>
         </div>
       </header>
 
-      {/* Main Content Area - Ultra Compact Card */}
-      <main className="relative z-20 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-[380px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[24px] border border-white/40 p-5 sm:p-6 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] transition-all">
+      {/* Main Content Area */}
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-2xl shadow-indigo-950/5">
           
-          {/* Step Badge */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              {theme.badgeText}
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-between mb-6">
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider border ${theme.badgeBg}`}>
+              <Sparkles className="w-3.5 h-3.5" />
+              {theme.stepLabel}
             </div>
 
-            {/* Step indicators */}
-            <div className="flex items-center gap-1">
+            {/* Step Dots */}
+            <div className="flex items-center gap-1.5">
               {[1, 2, 3, 4].map((s) => (
                 <div
                   key={s}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     s === step 
-                      ? 'w-5 bg-slate-900' 
+                      ? 'w-8 bg-gradient-to-r ' + theme.gradient 
                       : s < step 
-                      ? 'w-1.5 bg-emerald-500' 
-                      : 'w-1.5 bg-slate-200'
+                      ? 'w-2 bg-emerald-500' 
+                      : 'w-2 bg-slate-200'
                   }`}
                 />
               ))}
@@ -360,44 +354,55 @@ export function OnboardingDetailsScreen() {
           {/* STEP 1: NAME */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 1 && (
-            <form onSubmit={handleNextFromStep1} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Name
-              </h1>
+            <form onSubmit={handleNextFromStep1} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  What's your full name?
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-2 leading-relaxed">
+                  Let's personalize your SkillGo career acceleration experience with your name.
+                </p>
+              </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2">
+                <label htmlFor="name-input" className="block text-sm font-bold text-slate-800">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <User className="w-4 h-4" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-5 h-5" />
                   </div>
                   <input
                     ref={nameInputRef}
+                    id="name-input"
                     type="text"
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
                       setError(null);
                     }}
-                    placeholder="Enter your full name"
-                    className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50/80 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 font-medium transition-all"
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full pl-12 pr-4 py-3.5 text-base rounded-2xl border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/15 transition-all font-medium"
                     autoFocus
                   />
                 </div>
               </div>
 
               {error && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
                   {error}
                 </p>
               )}
 
-              <button
-                type="submit"
-                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
-              >
-                <span>Continue</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                >
+                  <span>Continue to City</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
             </form>
           )}
 
@@ -405,88 +410,120 @@ export function OnboardingDetailsScreen() {
           {/* STEP 2: CITY */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 2 && (
-            <form onSubmit={handleNextFromStep2} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                City
-              </h1>
+            <form onSubmit={handleNextFromStep2} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Which city are you in?
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-2 leading-relaxed">
+                  We match you with regional job placement partners and live employer drives near {city || 'you'}.
+                </p>
+              </div>
 
-              <div className="space-y-1 relative">
-                <button
-                  type="button"
-                  onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-                  className="w-full flex items-center justify-between pl-11 pr-4 py-3 text-left text-sm rounded-xl border border-slate-200 bg-slate-50/80 text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium transition-all cursor-pointer"
-                >
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-600">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <span className={city ? 'text-slate-900 font-bold' : 'text-slate-400'}>
-                    {city || 'Select city'}
-                  </span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-800">
+                  Select or Search City <span className="text-rose-500">*</span>
+                </label>
+                
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+                    className="w-full flex items-center justify-between pl-12 pr-4 py-3.5 text-left text-base rounded-2xl border border-slate-200 bg-slate-50/60 text-slate-900 focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 transition-all font-medium cursor-pointer"
+                  >
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                      <MapPin className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <span className={city ? 'text-slate-900 font-bold' : 'text-slate-400'}>
+                      {city || 'Choose your city'}
+                    </span>
+                    <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-                {/* City Dropdown Menu */}
-                {isCityDropdownOpen && (
-                  <div className="absolute z-30 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                    <div className="p-2 border-b border-slate-100 bg-slate-50">
-                      <div className="relative">
-                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="text"
-                          value={citySearch}
-                          onChange={(e) => setCitySearch(e.target.value)}
-                          placeholder="Search city..."
-                          className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 font-medium"
-                          autoFocus
-                        />
+                  {/* City Dropdown Menu */}
+                  {isCityDropdownOpen && (
+                    <div className="absolute z-30 mt-2 w-full bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                      <div className="p-3 border-b border-slate-100 bg-slate-50">
+                        <div className="relative">
+                          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            value={citySearch}
+                            onChange={(e) => setCitySearch(e.target.value)}
+                            placeholder="Type city name..."
+                            className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 font-medium"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="max-h-56 overflow-y-auto p-1.5">
+                        {citySearch && !filteredCities.includes(citySearch) && (
+                          <button
+                            type="button"
+                            onClick={() => handleCitySelect(citySearch)}
+                            className="w-full text-left px-4 py-2.5 text-sm rounded-xl hover:bg-amber-50 text-amber-800 font-bold flex items-center gap-2"
+                          >
+                            <MapPin className="w-4 h-4 text-amber-600" />
+                            <span>Use "{citySearch}"</span>
+                          </button>
+                        )}
+                        
+                        {filteredCities.map((cityName) => (
+                          <button
+                            key={cityName}
+                            type="button"
+                            onClick={() => handleCitySelect(cityName)}
+                            className={`w-full text-left px-4 py-2.5 text-sm rounded-xl flex items-center justify-between transition-colors font-medium ${
+                              city === cityName 
+                                ? 'bg-amber-50 text-amber-900 font-extrabold' 
+                                : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{cityName}</span>
+                            {city === cityName && <Check className="w-4 h-4 text-amber-600" />}
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    
-                    <div className="max-h-40 overflow-y-auto p-1">
-                      {citySearch && !filteredCities.includes(citySearch) && (
-                        <button
-                          type="button"
-                          onClick={() => handleCitySelect(citySearch)}
-                          className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-emerald-50 text-emerald-900 font-bold flex items-center gap-2"
-                        >
-                          <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Use "{citySearch}"</span>
-                        </button>
-                      )}
-                      
-                      {filteredCities.map((cityName) => (
-                        <button
-                          key={cityName}
-                          type="button"
-                          onClick={() => handleCitySelect(cityName)}
-                          className={`w-full text-left px-3 py-2 text-xs rounded-lg flex items-center justify-between transition-colors font-medium ${
-                            city === cityName 
-                              ? 'bg-emerald-50 text-emerald-900 font-bold' 
-                              : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span>{cityName}</span>
-                          {city === cityName && <Check className="w-3.5 h-3.5 text-emerald-600" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                {/* Popular City Quick Chips */}
+                <div className="pt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-slate-400 font-semibold mr-1">Popular:</span>
+                  {['Delhi NCR', 'Bengaluru', 'Mumbai', 'Pune', 'Hyderabad'].map((quickCity) => (
+                    <button
+                      key={quickCity}
+                      type="button"
+                      onClick={() => handleCitySelect(quickCity)}
+                      className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all cursor-pointer ${
+                        city === quickCity 
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm' 
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {quickCity}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {error && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
                   {error}
                 </p>
               )}
 
-              <button
-                type="submit"
-                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
-              >
-                <span>Continue</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                >
+                  <span>Continue to Mobile Number</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
             </form>
           )}
 
@@ -494,23 +531,33 @@ export function OnboardingDetailsScreen() {
           {/* STEP 3: PHONE NUMBER */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 3 && (
-            <form onSubmit={handleNextFromStep3} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Mobile Number
-              </h1>
+            <form onSubmit={handleNextFromStep3} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Enter your mobile number
+                </h1>
+                <p className="text-slate-500 text-sm sm:text-base mt-2 leading-relaxed">
+                  We'll send a secure 6-digit OTP verification code via SMS to verify your account.
+                </p>
+              </div>
 
-              <div className="space-y-1">
-                <div className="relative flex rounded-xl border border-slate-200 bg-slate-50/80 focus-within:bg-white focus-within:border-indigo-600 focus-within:ring-2 focus-within:ring-indigo-600/20 transition-all overflow-hidden">
-                  <div className="flex items-center gap-1 px-3 bg-slate-100 border-r border-slate-200 text-slate-800 font-bold text-xs select-none">
+              <div className="space-y-2">
+                <label htmlFor="phone-input" className="block text-sm font-bold text-slate-800">
+                  Mobile Number <span className="text-rose-500">*</span>
+                </label>
+                
+                <div className="relative flex rounded-2xl border border-slate-200 bg-slate-50/60 focus-within:bg-white focus-within:border-purple-600 focus-within:ring-4 focus-within:ring-purple-600/15 transition-all overflow-hidden">
+                  <div className="flex items-center gap-1.5 px-4 bg-slate-100 border-r border-slate-200 text-slate-800 font-bold text-sm select-none">
                     <span>🇮🇳</span>
                     <span>+91</span>
                   </div>
                   <div className="relative flex-1 flex items-center">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-indigo-600">
-                      <Phone className="w-4 h-4" />
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Phone className="w-5 h-5 text-purple-600" />
                     </div>
                     <input
                       ref={phoneInputRef}
+                      id="phone-input"
                       type="tel"
                       inputMode="numeric"
                       pattern="[0-9]*"
@@ -521,7 +568,7 @@ export function OnboardingDetailsScreen() {
                         setError(null);
                       }}
                       placeholder="98765 43210"
-                      className="w-full pl-9 pr-3 py-3 text-sm bg-transparent text-slate-900 placeholder:text-slate-400 focus:outline-none font-bold tracking-wide"
+                      className="w-full pl-11 pr-4 py-3.5 text-base bg-transparent text-slate-900 placeholder:text-slate-400 focus:outline-none font-bold tracking-wide"
                       maxLength={10}
                       autoFocus
                     />
@@ -530,18 +577,20 @@ export function OnboardingDetailsScreen() {
               </div>
 
               {error && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
                   {error}
                 </p>
               )}
 
-              <button
-                type="submit"
-                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
-              >
-                <span>Send OTP</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${theme.buttonClass}`}
+                >
+                  <span>Send Verification OTP</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
             </form>
           )}
 
@@ -549,25 +598,29 @@ export function OnboardingDetailsScreen() {
           {/* STEP 4: OTP VERIFICATION */}
           {/* ───────────────────────────────────────────────────────────── */}
           {step === 4 && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  OTP
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg mb-2">
+                  <Lock className="w-3.5 h-3.5" />
+                  SMS Sent to +91 {phone}
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Enter 6-digit OTP
                 </h1>
-                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                  +91 {phone}
-                </span>
+                <p className="text-slate-500 text-sm sm:text-base mt-1.5 leading-relaxed">
+                  Enter the verification code sent to your mobile number.
+                </p>
               </div>
 
               {resendSuccess && (
-                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-200">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>OTP sent</span>
+                <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center gap-2 border border-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>New OTP sent successfully via SMS</span>
                 </div>
               )}
 
-              {/* 6 OTP Inputs */}
-              <div className="flex items-center justify-between gap-1.5">
+              {/* 6 OTP Input Boxes - STAYS COMPLETELY BLANK */}
+              <div className="flex items-center justify-between gap-2">
                 {otp.map((digit, idx) => (
                   <input
                     key={idx}
@@ -580,49 +633,50 @@ export function OnboardingDetailsScreen() {
                     disabled={isOtpVerified || isVerifyingOtp}
                     onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className={`w-9 h-11 text-center text-base font-black rounded-xl border transition-all ${
+                    className={`w-12 h-14 text-center text-xl font-black rounded-2xl border transition-all ${
                       isOtpVerified
                         ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
                         : digit 
-                        ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 ring-2 ring-indigo-600/20' 
-                        : 'border-slate-200 bg-slate-50/80 focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20'
+                        ? 'border-purple-600 bg-purple-50/50 text-purple-900 ring-4 ring-purple-600/15' 
+                        : 'border-slate-200 bg-slate-50/60 focus:bg-white focus:border-purple-600 focus:ring-4 focus:ring-purple-600/15'
                     }`}
                   />
                 ))}
               </div>
 
               {(otpError || error) && (
-                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg border border-rose-200">
+                <p className="text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-200">
                   {otpError || error}
                 </p>
               )}
 
               {isVerifyingOtp && (
-                <div className="text-center text-xs font-bold text-indigo-600 animate-pulse">
-                  Verifying...
+                <div className="text-center py-2 text-sm font-bold text-purple-600 animate-pulse">
+                  Verifying OTP securely with Supabase...
                 </div>
               )}
 
               {isOtpVerified && (
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-extrabold flex items-center justify-center gap-1.5 border border-emerald-200">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Verified! Launching...</span>
+                <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-800 text-sm font-extrabold flex items-center justify-center gap-2 border border-emerald-200">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <span>Verification Successful! Launching SkillGo...</span>
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-xs pt-0.5">
+              {/* Resend & Auto-fill controls */}
+              <div className="flex items-center justify-between text-xs pt-1">
                 <div>
                   {canResend ? (
                     <button
                       type="button"
                       onClick={handleResendOtp}
-                      className="font-bold text-indigo-600 hover:underline cursor-pointer"
+                      className="font-bold text-purple-600 hover:text-purple-800 hover:underline cursor-pointer"
                     >
-                      Resend
+                      Resend SMS OTP
                     </button>
                   ) : (
                     <span className="text-slate-400 font-medium">
-                      Resend in <strong className="text-slate-700">{resendTimer}s</strong>
+                      Resend code in <strong className="text-slate-700">{resendTimer}s</strong>
                     </span>
                   )}
                 </div>
@@ -632,32 +686,34 @@ export function OnboardingDetailsScreen() {
                   onClick={() => setStep(3)}
                   className="font-bold text-slate-500 hover:text-slate-900 cursor-pointer"
                 >
-                  Change phone
+                  Change mobile number
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => triggerVerifyOtp(otp.join(''))}
-                disabled={otp.join('').length < 6 || isVerifyingOtp || isOtpVerified}
-                className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                  otp.join('').length === 6 && !isOtpVerified
-                    ? theme.buttonClass
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                <span>{isVerifyingOtp ? 'Verifying...' : isOtpVerified ? 'Verified' : 'Verify & Continue'}</span>
-                {!isVerifyingOtp && !isOtpVerified && <Check className="w-4 h-4" />}
-              </button>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => triggerVerifyOtp(otp.join(''))}
+                  disabled={otp.join('').length < 6 || isVerifyingOtp || isOtpVerified}
+                  className={`w-full py-4 px-6 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    otp.join('').length === 6 && !isOtpVerified
+                      ? theme.buttonClass
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span>{isVerifyingOtp ? 'Verifying...' : isOtpVerified ? 'Verified Successfully' : 'Verify & Launch SkillGo'}</span>
+                  {!isVerifyingOtp && !isOtpVerified && <Check className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
           )}
 
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-20 py-3 text-center text-[11px] text-white/70 backdrop-blur-md bg-white/5 border-t border-white/10">
-        SkillGo • Secure Supabase Auth
+      {/* Footer Info */}
+      <footer className="relative z-10 py-6 text-center text-xs text-slate-400 border-t border-amber-100/60 bg-white/50 backdrop-blur-sm">
+        SkillGo • Job-Ready Vocational Career Acceleration • Bank-Grade Secure Supabase Auth
       </footer>
 
     </div>
