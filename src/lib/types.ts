@@ -151,6 +151,24 @@ export interface Enrollment {
 
 export type CertificateStatus = 'locked' | 'eligible' | 'issued' | 'verified';
 
+export interface OrderItemRecord {
+  productId: string;
+  title: string;
+  price: number;
+  productType: ProductType;
+  selectedPlan?: PlanType;
+  skillId?: string;
+  subtitle?: string;
+}
+
+export interface OrderRecord {
+  orderId: string;
+  purchaseDate: string;
+  totalAmount: number;
+  paymentMethod: string;
+  items: OrderItemRecord[];
+}
+
 export interface CertificateRecord {
   id: string; // SG-CERT-XXXXXX
   enrollmentId: string;

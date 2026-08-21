@@ -210,10 +210,10 @@ export function HomeScreen() {
   return (
     <div className="w-full bg-[#FFF8F9] pb-16">
       
-      {/* 1. HERO SECTION — DARK PROMINENT & STRETCHED UP TO THE TOP */}
-      <section className="w-full px-0 sm:px-6 lg:px-8 pt-0" id="home-hero-section">
+      {/* 1. HERO SECTION */}
+      <section className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6" id="home-hero-section">
         <div className="max-w-7xl mx-auto">
-          <div className="relative rounded-none sm:rounded-3xl overflow-hidden border-y sm:border border-teal-900/40 shadow-xl bg-[#041215]">
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-teal-900/40 shadow-xl bg-[#041215]">
           
           {/* Horizontal Sliding Track (Left-to-Right Translation) */}
           <div 
@@ -703,58 +703,6 @@ export function HomeScreen() {
           </div>
         </div>
       </section>
-
-      {/* 4. CONTINUE LEARNING (CONDITIONAL) */}
-      {activeEnrollment && activeRole && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-9 sm:mt-12" id="continue-learning-section">
-          
-          <div className="mb-3.5">
-            <h2 className="text-xl sm:text-2xl font-bold text-[#0B192C] tracking-tight">
-              Continue Learning
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-5">
-            
-            <div className="space-y-2 max-w-lg">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
-                  Active Enrollment
-                </span>
-                <span className="text-xs text-slate-400 font-medium">
-                  {activeEnrollment.plan.toUpperCase()} Plan
-                </span>
-              </div>
-
-              <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                {activeRole.title}
-              </h3>
-
-              <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>Course Progress</span>
-                  <span className="font-bold text-slate-900">{activeProgress}%</span>
-                </div>
-                <ProgressBar value={activeProgress} color="blue" />
-              </div>
-            </div>
-
-            <div className="shrink-0">
-              <Button
-                variant="primary"
-                size="md"
-                iconRight={ArrowRight}
-                onClick={() => navigate('course-modules', { roleId: activeRole.id, enrollmentId: activeEnrollment.id })}
-                id="resume-learning-btn"
-              >
-                Resume Learning
-              </Button>
-            </div>
-
-          </div>
-
-        </section>
-      )}
 
       {/* 5. FEATURED MODULES (Vertical Rectangular Shape with Clean Right-Top View All) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-9 sm:mt-12" id="standalone-modules-section">

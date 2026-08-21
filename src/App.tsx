@@ -37,7 +37,9 @@ import {
   GraduationCap,
   Zap,
   Home,
-  TrendingUp
+  TrendingUp,
+  Receipt,
+  ArrowRight
 } from 'lucide-react';
 import { CartModal } from './components/CartModal';
 
@@ -48,6 +50,8 @@ function AppLayout() {
   const [showSplash, setShowSplash] = useState(true);
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [orderHistoryModalOpen, setOrderHistoryModalOpen] = useState(false);
+  const [selectedOrderRecord, setSelectedOrderRecord] = useState<any | null>(null);
   const [cartModalOpen, setCartModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [verifyInput, setVerifyInput] = useState('');
@@ -640,22 +644,184 @@ function AppLayout() {
             </div>
           </div>
 
-          <div className="pt-3 space-y-2">
-            <Button size="sm" variant="primary" className="w-full" onClick={() => { setProfileModalOpen(false); navigate('my-learning'); }}>
-              View My Learning Dashboard
-            </Button>
-            <button
-              onClick={() => {
-                setProfileModalOpen(false);
-                enrollmentStore.resetOnboarding();
-                setShowSplash(true);
-                navigate('onboarding-details');
-              }}
-              className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer border border-dashed border-slate-200"
+          <div className="pt-3 space-y-3">
+            <div 
+              onClick={() => { setProfileModalOpen(false); navigate('my-learning'); }}
+              className="group p-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-amber-500/10 hover:from-blue-500/15 hover:to-amber-500/15 backdrop-blur-2xl border border-blue-200/80 rounded-xl cursor-pointer transition-all shadow-xs flex items-center justify-between"
             >
-              Test Fresh Learner Onboarding Flow
-            </button>
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h5 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-blue-600 transition-colors">View My Learning Dashboard</h5>
+                  <p className="text-[11px] text-slate-500">Track active enrollments & progress</p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+            </div>
+
+            <div 
+              onClick={() => { 
+                setProfileModalOpen(false); 
+                setSelectedOrderRecord(null);
+                setOrderHistoryModalOpen(true); 
+              }}
+              className="group p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-amber-500/10 hover:from-emerald-500/15 hover:to-amber-500/15 backdrop-blur-2xl border border-emerald-200/80 rounded-xl cursor-pointer transition-all shadow-xs flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h5 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-emerald-700 transition-colors">View Order History & Purchases</h5>
+                  <p className="text-[11px] text-slate-500">{enrollmentStore.getOrderHistory().length} order receipt{enrollmentStore.getOrderHistory().length !== 1 ? 's' : ''} stored</p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors shrink-0" />
+            </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* ORDER HISTORY & PURCHASES REPOSITORY MODAL */}
+      <Modal
+        isOpen={orderHistoryModalOpen}
+        onClose={() => {
+          setOrderHistoryModalOpen(false);
+          setSelectedOrderRecord(null);
+        }}
+        title="Learner Order & Purchase History"
+        maxWidth="max-w-xl"
+      >
+        <div className="space-y-4 text-sm text-slate-700 max-h-[75vh] overflow-y-auto pr-1">
+          {enrollmentStore.getOrderHistory().length === 0 ? (
+            <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-3">
+              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+                <Receipt className="w-6 h-6" />
+              </div>
+              <h4 className="font-bold text-slate-900 text-base">No Purchase Orders Yet</h4>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                When you enroll in skill programs or purchase library modules, your complete transaction records, dates, and item receipts will appear here.
+              </p>
+              <Button size="sm" variant="primary" onClick={() => { setOrderHistoryModalOpen(false); navigate('library'); }}>
+                Explore Library & Skills
+              </Button>
+            </div>
+          ) : selectedOrderRecord ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-blue-50/80 border border-blue-200/80 p-3.5 rounded-xl">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Order Receipt</span>
+                  <div className="font-mono font-bold text-slate-900 text-sm mt-0.5">{selectedOrderRecord.orderId}</div>
+                  <div className="text-xs text-slate-500">{selectedOrderRecord.purchaseDate} • {selectedOrderRecord.paymentMethod}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-slate-500">Total Paid</div>
+                  <div className="font-black text-slate-900 text-base">₹{selectedOrderRecord.totalAmount}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Purchased Items ({selectedOrderRecord.items.length})</h5>
+                  <button 
+                    onClick={() => setSelectedOrderRecord(null)}
+                    className="text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
+                  >
+                    ← Back to All Orders
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {selectedOrderRecord.items.map((item: any, idx: number) => (
+                    <div
+                      key={`order-item-${idx}`}
+                      onClick={() => {
+                        setOrderHistoryModalOpen(false);
+                        setSelectedOrderRecord(null);
+                        if (item.productType === 'library') {
+                          navigate('library');
+                        } else {
+                          navigate('course-modules', { 
+                            roleId: item.productId, 
+                            skillId: item.skillId || 'logistics-supply-chain', 
+                            plan: item.selectedPlan || 'pro' 
+                          });
+                        }
+                      }}
+                      className="bg-white border border-slate-200 rounded-xl p-3.5 hover:border-blue-300 hover:shadow-xs transition-all cursor-pointer flex items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                          item.productType === 'skill' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                        }`}>
+                          {item.productType === 'skill' ? 'SK' : 'LIB'}
+                        </div>
+                        <div className="min-w-0">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                            item.productType === 'skill' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                          }`}>
+                            {item.productType === 'skill' ? `${(item.selectedPlan || 'pro').toUpperCase()} Plan` : 'Standalone Module'}
+                          </span>
+                          <h4 className="text-xs font-bold text-slate-900 truncate mt-1 group-hover:text-blue-600 transition-colors">
+                            {item.title}
+                          </h4>
+                          <span className="text-[10px] text-slate-400 block truncate">
+                            ID: {item.productId}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-xs">₹{item.price}</span>
+                        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500">
+                Select an order below to view purchase details, line items, and navigate directly to your enrolled courses or library modules.
+              </p>
+              <div className="space-y-2.5">
+                {enrollmentStore.getOrderHistory().map((order: any, idx: number) => (
+                  <div
+                    key={`order-row-${idx}`}
+                    onClick={() => setSelectedOrderRecord(order)}
+                    className="bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-xs transition-all cursor-pointer flex items-center justify-between gap-4 group"
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 font-bold">
+                        <Receipt className="w-5 h-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-mono font-bold text-slate-900 text-xs sm:text-sm group-hover:text-blue-600 transition-colors">
+                          {order.orderId}
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                          <span>{order.purchaseDate}</span>
+                          <span>•</span>
+                          <span>{order.items.length} item{order.items.length > 1 ? 's' : ''}</span>
+                          <span>•</span>
+                          <span className="font-medium text-slate-700">{order.paymentMethod}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 flex items-center gap-3">
+                      <div>
+                        <div className="font-black text-slate-900 text-sm">₹{order.totalAmount}</div>
+                        <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">Paid</span>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Enrollment, LearnerProfile, CertificateRecord, PlanType, CertificateStatus, CartItem, ProductType } from './types';
+import { Enrollment, LearnerProfile, CertificateRecord, PlanType, CertificateStatus, CartItem, ProductType, OrderRecord } from './types';
 import { JOB_ROLES, SKILL_CATEGORIES, LIBRARY_ITEMS } from './catalog';
 
 const STORAGE_KEYS = {
@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   REGISTERED: 'skillgo_registered_v1',
   CART: 'skillgo_cart_v1',
   PURCHASED_LIBRARY: 'skillgo_purchased_library_v1',
+  ORDER_HISTORY: 'skillgo_order_history_v1',
 };
 
 const GUEST_PROFILE: LearnerProfile = {
@@ -403,6 +404,10 @@ export const enrollmentStore = {
     if (!role || role.modules.length === 0) return 0;
     const completedCount = enrollment.completedModules.length;
     return Math.round((completedCount / role.modules.length) * 100);
+  },
+
+  getOrderHistory(): OrderRecord[] {
+    return getStorageItem<OrderRecord[]>(STORAGE_KEYS.ORDER_HISTORY, []);
   }
 };
 
@@ -454,6 +459,10 @@ export const cartStore = {
 
   getPurchasedLibraryItemIds(): string[] {
     return getStorageItem<string[]>(STORAGE_KEYS.PURCHASED_LIBRARY, []);
+  },
+
+  getOrderHistory(): OrderRecord[] {
+    return getStorageItem<OrderRecord[]>(STORAGE_KEYS.ORDER_HISTORY, []);
   },
 
   isLibraryItemPurchased(libraryItemId: string): boolean {
@@ -527,6 +536,25 @@ export const cartStore = {
       const combined = Array.from(new Set([...existingPurchased, ...newLibraryIds]));
       setStorageItem(STORAGE_KEYS.PURCHASED_LIBRARY, combined);
     }
+
+    // Save order record to order history repository
+    const orderRecord: OrderRecord = {
+      orderId,
+      purchaseDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      totalAmount,
+      paymentMethod: paymentMethod.toUpperCase(),
+      items: cart.map(item => ({
+        productId: item.productId,
+        title: item.title,
+        price: item.price,
+        productType: item.productType,
+        selectedPlan: item.selectedPlan,
+        skillId: item.skillId,
+        subtitle: item.subtitle
+      }))
+    };
+    const existingOrders = this.getOrderHistory();
+    setStorageItem(STORAGE_KEYS.ORDER_HISTORY, [orderRecord, ...existingOrders]);
 
     // Clear cart after successful checkout
     this.clearCart();
