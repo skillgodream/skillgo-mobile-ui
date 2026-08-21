@@ -100,20 +100,23 @@ export function MyLearningScreen() {
         {/* 1. DASHBOARD HEADER: LEFT DISPLAY PIC (LINKEDIN STYLE) + WISHING + LEARNER NAME */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex items-center justify-between gap-4" id="learner-profile-header">
           <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-            {/* 2-Letter Initials Icon Avatar */}
+            {/* Picture Avatar */}
             <div className="relative shrink-0">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-600 via-indigo-600 to-sky-600 text-white font-black text-base sm:text-lg flex items-center justify-center shadow-md ring-2 ring-blue-500/20 border-2 border-white tracking-wider">
-                {(profile.name || 'Daizy Shah').slice(0, 2).toUpperCase()}
-              </div>
+              <img
+                src={learnerAvatarUrl}
+                alt={profile.name || 'Learner'}
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover ring-2 ring-blue-500/20 shadow-sm border-2 border-white"
+                referrerPolicy="no-referrer"
+              />
               <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
             </div>
 
-            {/* Wishing (Good morning / afternoon) + Name */}
+            {/* Wishing (Good morning / afternoon) + Name (3X larger) */}
             <div className="min-w-0">
-              <div className="text-xs font-semibold text-slate-500">
+              <div className="text-xs sm:text-sm font-semibold text-slate-500 mb-0.5">
                 {getGreeting()},
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 truncate">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight truncate">
                 {profile.name || 'Daizy Shah'}
               </h1>
             </div>

@@ -412,17 +412,17 @@ function AppLayout() {
         {currentRoute.screen === 'certificate' && <CertificateScreen />}
       </main>
 
-      {/* 3. PREMIUM FIXED BOTTOM NAVIGATION BAR FOR MOBILE (Screens < 768px) */}
+      {/* 3. APPLE GLASS FLOATING BOTTOM NAVIGATION BAR FOR MOBILE (Screens < 768px) */}
       <nav 
         id="mobile-bottom-nav"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] px-2 py-2 flex items-center justify-around"
+        className="md:hidden fixed bottom-8 left-4 right-4 max-w-lg mx-auto z-40 bg-white/75 backdrop-blur-2xl border border-white/60 shadow-[0_16px_36px_rgba(0,0,0,0.14)] px-3 py-2.5 rounded-2xl flex items-center justify-around"
       >
         {/* Tab 1: Home */}
         <button
           onClick={() => navigate('home')}
           id="mobile-bottom-tab-home"
-          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all cursor-pointer rounded-lg ${
-            activeTab === 'home' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'
+          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all duration-200 hover:-translate-y-1 hover:scale-105 cursor-pointer rounded-lg ${
+            activeTab === 'home' ? 'text-blue-600 font-bold -translate-y-0.5' : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
           <Home className={`w-5 h-5 ${activeTab === 'home' ? 'stroke-[2.5] text-blue-600 fill-blue-50' : 'stroke-[1.8]'}`} />
@@ -433,8 +433,8 @@ function AppLayout() {
         <button
           onClick={() => navigate('choose-skill')}
           id="mobile-bottom-tab-careers"
-          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all cursor-pointer rounded-lg ${
-            activeTab === 'careers' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'
+          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all duration-200 hover:-translate-y-1 hover:scale-105 cursor-pointer rounded-lg ${
+            activeTab === 'careers' ? 'text-blue-600 font-bold -translate-y-0.5' : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
           <ShoppingBag className={`w-5 h-5 ${activeTab === 'careers' ? 'stroke-[2.5] text-blue-600' : 'stroke-[1.8]'}`} />
@@ -445,8 +445,8 @@ function AppLayout() {
         <button
           onClick={() => navigate('my-learning')}
           id="mobile-bottom-tab-learning"
-          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all cursor-pointer rounded-lg ${
-            activeTab === 'learning' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'
+          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all duration-200 hover:-translate-y-1 hover:scale-105 cursor-pointer rounded-lg ${
+            activeTab === 'learning' ? 'text-blue-600 font-bold -translate-y-0.5' : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
           <BookOpen className={`w-5 h-5 ${activeTab === 'learning' ? 'stroke-[2.5] text-blue-600' : 'stroke-[1.8]'}`} />
@@ -457,8 +457,8 @@ function AppLayout() {
         <button
           onClick={() => navigate('practical-training', { roleId: 'warehouse-associate', from: 'bottom-nav' })}
           id="mobile-bottom-tab-practice"
-          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all cursor-pointer rounded-lg ${
-            activeTab === 'practice' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'
+          className={`flex flex-col items-center justify-center flex-1 py-0.5 px-1 transition-all duration-200 hover:-translate-y-1 hover:scale-105 cursor-pointer rounded-lg ${
+            activeTab === 'practice' ? 'text-blue-600 font-bold -translate-y-0.5' : 'text-slate-500 hover:text-slate-800 font-medium'
           }`}
         >
           <TrendingUp className={`w-5 h-5 ${activeTab === 'practice' ? 'stroke-[2.5] text-blue-600' : 'stroke-[1.8]'}`} />
@@ -469,7 +469,7 @@ function AppLayout() {
         <button
           onClick={() => setProfileModalOpen(true)}
           id="mobile-bottom-tab-profile"
-          className="flex flex-col items-center justify-center flex-1 py-0.5 px-1 text-slate-500 hover:text-slate-800 font-medium transition-all cursor-pointer rounded-lg"
+          className="flex flex-col items-center justify-center flex-1 py-0.5 px-1 text-slate-500 hover:text-slate-800 font-medium transition-all duration-200 hover:-translate-y-1 hover:scale-105 cursor-pointer rounded-lg"
         >
           <User className="w-5 h-5 stroke-[1.8]" />
           <span className="text-[10px] mt-1 tracking-tight">Profile</span>
