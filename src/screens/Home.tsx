@@ -39,8 +39,6 @@ export function HomeScreen() {
   // Carousel slide state
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Library modal reader state
-  const [selectedLibraryItem, setSelectedLibraryItem] = useState<LibraryItem | null>(null);
   const [libraryCategory, setLibraryCategory] = useState<string>('All');
   const libraryScrollRef = useRef<HTMLDivElement>(null);
 
@@ -743,7 +741,7 @@ export function HomeScreen() {
             return (
               <div
                 key={item.id}
-                onClick={() => setSelectedLibraryItem(item)}
+                onClick={() => navigate('library-detail', { libraryId: item.id })}
                 className="w-[220px] sm:w-[240px] shrink-0 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-pink-300 hover:-translate-y-2.5 hover:scale-[1.03] transition-all duration-300 cursor-pointer flex flex-col justify-between group overflow-hidden"
               >
                 {/* Top: Rectangular Thumbnail Image */}
@@ -786,120 +784,9 @@ export function HomeScreen() {
               </div>
             );
           })}
+          </div>
         </div>
-        </div>
-
       </section>
-
-      {/* STANDALONE LIBRARY READER / PREVIEW MODAL */}
-      <Modal
-        isOpen={!!selectedLibraryItem}
-        onClose={() => setSelectedLibraryItem(null)}
-        title={selectedLibraryItem?.title}
-        maxWidth="max-w-2xl"
-      >
-        {selectedLibraryItem && (() => {
-          const isPurchased = isLibraryPurchased(selectedLibraryItem.id);
-          const inCart = isInCart(selectedLibraryItem.id);
-          const itemPrice = selectedLibraryItem.price || 29;
-
-          return (
-            <div className="space-y-6 text-sm text-slate-700">
-              <div className="flex items-center justify-between text-xs text-slate-500 pb-3 border-b border-slate-100 flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold">
-                    {selectedLibraryItem.category}
-                  </span>
-                  <span>•</span>
-                  <span>{selectedLibraryItem.duration || selectedLibraryItem.readTime}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900 text-sm">₹{itemPrice}</span>
-                  {isPurchased ? (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                      ✓ UNLOCKED
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px]">
-                      INDEPENDENT MODULE
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Overview</h4>
-                <p className="text-slate-700 leading-relaxed">{selectedLibraryItem.summary}</p>
-              </div>
-
-              {isPurchased ? (
-                <>
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Step-by-Step Procedure</h4>
-                    <div className="space-y-2">
-                      {selectedLibraryItem.content.map((point, index) => (
-                        <div key={index} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs sm:text-sm text-slate-800">
-                          {point}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {selectedLibraryItem.keyTips && (
-                    <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900 text-xs">
-                      <strong>Pro Operational Tip:</strong> {selectedLibraryItem.keyTips.join(' ')}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 text-center">
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-bold text-slate-900">Unlock Full Standard Operating Procedure</h4>
-                    <p className="text-xs text-slate-500 max-w-md mx-auto">
-                      Get complete actionable checklists, step-by-step workplace SOPs, and pro tips for just ₹{itemPrice}.
-                    </p>
-                  </div>
-
-                  <div className="pt-1 flex items-center justify-center gap-3">
-                    {inCart ? (
-                      <Button size="md" variant="secondary" disabled>
-                        ✓ In Cart
-                      </Button>
-                    ) : (
-                      <Button
-                        size="md"
-                        variant="primary"
-                        iconRight={Plus}
-                        onClick={() => {
-                          addToCart({
-                            id: `cart-lib-${selectedLibraryItem.id}`,
-                            productId: selectedLibraryItem.id,
-                            productType: 'library',
-                            title: selectedLibraryItem.title,
-                            price: itemPrice,
-                            image: selectedLibraryItem.image,
-                            category: selectedLibraryItem.category,
-                            duration: selectedLibraryItem.duration || selectedLibraryItem.readTime
-                          });
-                        }}
-                      >
-                        + Add to Cart (₹{itemPrice})
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2 flex justify-end">
-                <Button size="sm" variant="secondary" onClick={() => setSelectedLibraryItem(null)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          );
-        })()}
-      </Modal>
-
     </div>
   );
 }

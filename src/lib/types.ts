@@ -93,6 +93,8 @@ export interface LibraryItem {
   downloadable?: boolean;
   image?: string;
   imageAlt?: string;
+  videoDuration?: string;
+  videoUrl?: string;
 }
 
 export type ProductType = 'skill' | 'library';

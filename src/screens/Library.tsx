@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Clock, Search, BookOpen, FileText, ArrowRight, Plus, Check, ShoppingBag } from 'lucide-react';
-import { Button, Badge, Modal } from '../components/ui';
+import { Button, Badge } from '../components/ui';
 import { LIBRARY_ITEMS } from '../lib/catalog';
 import { useRouter } from '../lib/router';
 import { LibraryItem } from '../lib/types';
@@ -8,11 +8,10 @@ import { useCartState } from '../lib/enrollmentStore';
 import { CartModal } from '../components/CartModal';
 
 export function LibraryScreen() {
-  const { goBack } = useRouter();
+  const { navigate, goBack } = useRouter();
   const { addToCart, isInCart, isLibraryPurchased } = useCartState();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
   const [showCartModal, setShowCartModal] = useState(false);
 
   const filtered = LIBRARY_ITEMS.filter(item => {
@@ -36,7 +35,7 @@ export function LibraryScreen() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">SkillGo Library</h1>
           <p className="text-slate-500 text-xs sm:text-sm mt-1">
-            Practical SOP modules, cheat sheets, and workplace guides for ₹29.
+            Practical SOP modules, cheat sheets, and workplace guides with video walkthroughs for ₹29.
           </p>
         </div>
 
@@ -79,7 +78,7 @@ export function LibraryScreen() {
           return (
             <div
               key={item.id}
-              onClick={() => setSelectedItem(item)}
+              onClick={() => navigate('library-detail', { libraryId: item.id })}
               className="bg-white rounded-xl border border-slate-200/80 p-2.5 shadow-2xs hover:shadow-xl hover:border-blue-400 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 ease-out flex items-center gap-3 cursor-pointer group relative z-0 hover:z-10"
             >
               {/* Left Side: Picture (Compact 70% footprint) */}
@@ -124,7 +123,7 @@ export function LibraryScreen() {
 
                   {isPurchased ? (
                     <span className="text-emerald-600 text-[11px] font-semibold flex items-center gap-0.5">
-                      Read →
+                      View Module →
                     </span>
                   ) : inCart ? (
                     <button
@@ -164,120 +163,6 @@ export function LibraryScreen() {
           );
         })}
       </div>
-
-      {/* Library Reader / Preview Modal */}
-      <Modal
-        isOpen={Boolean(selectedItem)}
-        onClose={() => setSelectedItem(null)}
-        title={selectedItem?.title}
-        maxWidth="max-w-2xl"
-      >
-        {selectedItem && (() => {
-          const isPurchased = isLibraryPurchased(selectedItem.id);
-          const inCart = isInCart(selectedItem.id);
-          const price = selectedItem.price || 29;
-
-          return (
-            <div className="space-y-4 text-slate-700 text-sm">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="orange">{selectedItem.category}</Badge>
-                  <span className="text-slate-400">•</span>
-                  <span className="text-slate-500">{selectedItem.duration}</span>
-                  <span className="text-slate-400">•</span>
-                  <span className="text-slate-500">{selectedItem.level}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900 text-sm">₹{price}</span>
-                  {isPurchased ? (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                      ✓ UNLOCKED
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px]">
-                      INDEPENDENT MODULE
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <p className="text-slate-600 font-medium leading-relaxed">
-                {selectedItem.summary}
-              </p>
-
-              {isPurchased ? (
-                <>
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
-                    <h5 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                      Operating Procedure / Instructions:
-                    </h5>
-                    <div className="space-y-2 text-xs leading-relaxed">
-                      {selectedItem.content.map((p, i) => (
-                        <p key={i} className="text-slate-700">{p}</p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {selectedItem.keyTips && (
-                    <div className="bg-amber-50 rounded-xl p-3.5 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
-                      <span className="font-bold shrink-0">💡 Pro Tip:</span>
-                      <span>{selectedItem.keyTips.join(' ')}</span>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3 text-center">
-                  <h4 className="text-sm font-bold text-slate-900">Unlock Complete Step-by-Step SOP</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Purchase this independent library module for ₹{price} to access the full operational procedure and checklist.
-                  </p>
-                  <div className="pt-2 flex items-center justify-center gap-3">
-                    {inCart ? (
-                      <Button
-                        size="md"
-                        variant="primary"
-                        iconRight={ShoppingBag}
-                        onClick={() => {
-                          setSelectedItem(null);
-                          setShowCartModal(true);
-                        }}
-                      >
-                        View in Cart & Checkout
-                      </Button>
-                    ) : (
-                      <Button
-                        size="md"
-                        variant="primary"
-                        iconRight={Plus}
-                        onClick={() => {
-                          addToCart({
-                            id: `cart-lib-${selectedItem.id}`,
-                            productId: selectedItem.id,
-                            productType: 'library',
-                            title: selectedItem.title,
-                            price,
-                            image: selectedItem.image,
-                            category: selectedItem.category,
-                            duration: selectedItem.duration
-                          });
-                        }}
-                      >
-                        + Add to Cart (₹{price})
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2 flex justify-end">
-                <Button size="sm" variant="secondary" onClick={() => setSelectedItem(null)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          );
-        })()}
-      </Modal>
 
       {/* Cart Modal */}
       <CartModal

@@ -24,6 +24,7 @@ export type ScreenName =
   | 'verify-certificate'
   | 'my-learning'
   | 'library'
+  | 'library-detail'
   | 'growth-plan'
   | 'support'
   | 'careers'

@@ -16,6 +16,7 @@ import { PracticalTrainingScreen } from './screens/PracticalTraining';
 import { FinalAssessmentScreen } from './screens/FinalAssessment';
 import { MyLearningScreen } from './screens/MyLearning';
 import { LibraryScreen } from './screens/Library';
+import { LibraryDetailScreen } from './screens/LibraryDetail';
 import { CertificateScreen } from './screens/Certificate';
 import { useEnrollmentState, useCartState, enrollmentStore, cartStore } from './lib/enrollmentStore';
 import { 
@@ -163,7 +164,7 @@ function AppLayout() {
     if (s === 'my-learning' || s === 'course-modules' || s === 'module-video' || s === 'module-quiz' || s === 'course-complete' || s === 'final-assessment') return 'learning';
     if (s === 'practical-training') return 'practice';
     if (s === 'certificate') return 'learning';
-    if (s === 'library') return 'home';
+    if (s === 'library' || s === 'library-detail') return 'home';
     return 'home';
   };
 
@@ -416,13 +417,14 @@ function AppLayout() {
         {currentRoute.screen === 'final-assessment' && <FinalAssessmentScreen />}
         {currentRoute.screen === 'my-learning' && <MyLearningScreen />}
         {currentRoute.screen === 'library' && <LibraryScreen />}
+        {currentRoute.screen === 'library-detail' && <LibraryDetailScreen />}
         {currentRoute.screen === 'certificate' && <CertificateScreen />}
       </main>
 
       {/* 3. APPLE GLASS FLOATING BOTTOM NAVIGATION BAR FOR MOBILE (Screens < 768px) */}
       <nav 
         id="mobile-bottom-nav"
-        className="md:hidden fixed bottom-8 left-4 right-4 max-w-lg mx-auto z-40 bg-white/75 backdrop-blur-2xl border border-white/60 shadow-[0_16px_36px_rgba(0,0,0,0.14)] px-3 py-2.5 rounded-2xl flex items-center justify-around"
+        className="md:hidden fixed bottom-2.5 left-3 right-3 max-w-lg mx-auto z-40 bg-white/85 backdrop-blur-2xl border border-slate-200 shadow-[0_12px_32px_rgba(0,0,0,0.12)] px-3 py-2 rounded-2xl flex items-center justify-around"
       >
         {/* Tab 1: Home */}
         <button
