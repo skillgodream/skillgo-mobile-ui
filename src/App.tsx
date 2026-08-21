@@ -43,9 +43,11 @@ import {
   ArrowRight,
   HelpCircle,
   LogOut,
-  Settings
+  Settings,
+  Globe
 } from 'lucide-react';
 import { CartModal } from './components/CartModal';
+import { LanguageModal } from './components/LanguageModal';
 
 function AppLayout() {
   const { currentRoute, navigate } = useRouter();
@@ -57,6 +59,8 @@ function AppLayout() {
   const [orderHistoryModalOpen, setOrderHistoryModalOpen] = useState(false);
   const [selectedOrderRecord, setSelectedOrderRecord] = useState<any | null>(null);
   const [cartModalOpen, setCartModalOpen] = useState(false);
+  const [languageModalOpen, setLanguageModalOpen] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState('en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [verifyInput, setVerifyInput] = useState('');
   const [verifyResult, setVerifyResult] = useState<any>(null);
@@ -237,6 +241,17 @@ function AppLayout() {
                   3
                 </span>
               </div>
+
+              {/* Language Selection Button */}
+              <button
+                onClick={() => setLanguageModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer shrink-0"
+                id="header-language-btn"
+                title="Select Language"
+              >
+                <Globe className="w-4 h-4 text-blue-600" />
+                <span className="hidden sm:inline uppercase">{currentLanguage}</span>
+              </button>
 
               {/* Cart Button with Dynamic Badge Count (Visible on all mobile & desktop viewports) */}
               <button
@@ -909,6 +924,14 @@ function AppLayout() {
       <CartModal
         isOpen={cartModalOpen}
         onClose={() => setCartModalOpen(false)}
+      />
+
+      {/* LANGUAGE SELECTION MODAL */}
+      <LanguageModal
+        isOpen={languageModalOpen}
+        onClose={() => setLanguageModalOpen(false)}
+        currentLanguage={currentLanguage}
+        onSelectLanguage={setCurrentLanguage}
       />
 
     </div>

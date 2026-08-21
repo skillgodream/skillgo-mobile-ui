@@ -9,7 +9,7 @@ export function SkillGoLogo({
 }: { 
   className?: string; 
   onClick?: () => void;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   theme?: "dark" | "light";
 }) {
   const sizeStyles = {
@@ -18,6 +18,7 @@ export function SkillGoLogo({
     lg: "text-lg sm:text-xl tracking-[0.22em]",
     xl: "text-xl sm:text-2xl tracking-[0.24em]",
     "2xl": "text-2xl sm:text-4xl tracking-[0.26em]",
+    "3xl": "text-3xl sm:text-6xl tracking-[0.28em]",
   };
 
   return (

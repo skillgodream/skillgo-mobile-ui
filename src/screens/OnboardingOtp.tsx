@@ -161,8 +161,8 @@ export function OnboardingOtpScreen() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-10">
-        <div className="w-full max-w-lg mb-6 flex justify-center">
-          <SkillGoLogo size="2xl" />
+        <div className="w-full max-w-lg mb-8 sm:mb-10 flex justify-center">
+          <SkillGoLogo size="3xl" />
         </div>
         <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-9 shadow-sm">
           
