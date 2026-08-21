@@ -91,18 +91,8 @@ function AppLayout() {
         // Clean URL search params without reload
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        // Navigate directly to the Learning screen for the purchased course modules
-        const enrollments = enrollmentStore.getEnrollments();
-        const activeEnrollment = enrollmentStore.getActiveEnrollment() || enrollments[enrollments.length - 1] || enrollments[0];
-
-        if (activeEnrollment) {
-          navigate('course-modules', { roleId: activeEnrollment.roleId, skillId: activeEnrollment.skillId, plan: activeEnrollment.plan });
-        } else if (orderResult && orderResult.enrolledRoles && orderResult.enrolledRoles.length > 0) {
-          const firstRole = orderResult.enrolledRoles[0];
-          navigate('course-modules', { roleId: firstRole.roleId, skillId: firstRole.skillId, plan: firstRole.plan });
-        } else {
-          navigate('my-learning');
-        }
+        // Navigate to the main My Learning screen
+        navigate('my-learning');
       } else if (paymentStatus === 'failed') {
         setPaymentNotice({
           type: 'failed',

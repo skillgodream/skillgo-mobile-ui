@@ -278,14 +278,9 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
 
       setIsProcessing(false);
 
-      // 3. Redirect user straight to the main learning modules view as if they paid real money
+      // 3. Redirect user to the main My Learning screen
       onClose();
-      const firstRole = orderResult.enrolledRoles[0];
-      if (firstRole) {
-        navigate('course-modules', { roleId: firstRole.roleId, skillId: firstRole.skillId, plan: firstRole.plan });
-      } else {
-        navigate('my-learning');
-      }
+      navigate('my-learning');
     } catch (err) {
       console.error('Developer bypass payment exception:', err);
       setIsProcessing(false);
