@@ -29,7 +29,7 @@ import { Button, Badge } from './ui';
 import { useRouter } from '../lib/router';
 import { CartItem } from '../lib/types';
 import { initiatePayUPayment } from '../lib/payu';
-import { sendSupabaseOtp, verifySupabaseOtp } from '../lib/supabase';
+import { sendSupabaseOtp, verifySupabaseOtp, supabase } from '../lib/supabase';
 
 const POPULAR_CITIES = [
   'Delhi NCR',
@@ -250,6 +250,49 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
       setIsProcessing(false);
       setStep('success');
     }, 750);
+  };
+
+  const handleDeveloperBypassPayment = async () => {
+    setIsProcessing(true);
+    try {
+      // 1. Update user state & process checkout order
+      const orderResult = checkoutOrder(paymentMethod);
+      setCompletedOrder(orderResult);
+
+      // 2. Log mock enrollment details inside Supabase database
+      try {
+        const profile = enrollmentStore.getProfile();
+        await supabase.from('mock_enrollments').insert({
+          order_id: orderResult.orderId,
+          amount: orderResult.totalAmount,
+          candidate_name: profile.name,
+          candidate_phone: profile.phone,
+          candidate_email: profile.email,
+          enrolled_roles: orderResult.enrolledRoles,
+          purchased_modules: orderResult.purchasedModules,
+          created_at: new Date().toISOString()
+        });
+      } catch (sbErr) {
+        console.log('Supabase mock enrollment log notice:', sbErr);
+      }
+
+      setIsProcessing(false);
+
+      // 3. Redirect user straight to the main learning modules view as if they paid real money
+      onClose();
+      const firstRole = orderResult.enrolledRoles[0];
+      if (firstRole) {
+        navigate('course-modules', { roleId: firstRole.roleId, skillId: firstRole.skillId, plan: firstRole.plan });
+      } else {
+        navigate('my-learning');
+      }
+    } catch (err) {
+      console.error('Developer bypass payment exception:', err);
+      setIsProcessing(false);
+      const orderResult = checkoutOrder(paymentMethod);
+      setCompletedOrder(orderResult);
+      setStep('success');
+    }
   };
 
   const handlePayUNow = async () => {
@@ -849,6 +892,19 @@ export function CartModal({ isOpen, onClose, initialStep = 'cart' }: CartModalPr
               >
                 ← Back to Cart
               </button>
+
+              {/* Developer Bypass Link at Absolute Bottom */}
+              <div className="pt-3 text-center border-t border-slate-200 mt-2">
+                <button
+                  type="button"
+                  onClick={handleDeveloperBypassPayment}
+                  disabled={isProcessing}
+                  className="text-[11px] font-mono text-slate-400 hover:text-slate-700 underline cursor-pointer transition-colors block w-full py-1"
+                  id="dev-simulate-successful-payment-btn"
+                >
+                  Development: Simulate Successful Payment
+                </button>
+              </div>
             </div>
           )}
 
