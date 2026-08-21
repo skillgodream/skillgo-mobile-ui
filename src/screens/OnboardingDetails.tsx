@@ -290,11 +290,7 @@ export function OnboardingDetailsScreen() {
       </div>
 
       {/* Top Minimal Header */}
-      <header className="relative z-10 w-full py-5 px-6 sm:px-10 flex items-center justify-between border-b border-amber-100/60 bg-white/70 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <SkillGoLogo />
-        </div>
-        
+      <header className="relative z-10 w-full py-5 px-6 sm:px-10 flex items-center justify-end border-b border-amber-100/60 bg-white/70 backdrop-blur-md">
         <div className="flex items-center gap-3">
           {step > 1 && (
             <button
@@ -323,13 +319,12 @@ export function OnboardingDetailsScreen() {
       </header>
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-lg mb-6 flex justify-center">
+          <SkillGoLogo size="2xl" />
+        </div>
         <div className="w-full max-w-lg bg-white/90 backdrop-blur-xl rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-2xl shadow-indigo-950/5">
           
-          <div className="mb-6">
-            <SkillGoLogo size="2xl" />
-          </div>
-
           {/* Progress Indicator */}
           <div className="flex items-center justify-between mb-6">
             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider border ${theme.badgeBg}`}>

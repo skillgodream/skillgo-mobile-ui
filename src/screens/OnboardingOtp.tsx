@@ -149,10 +149,7 @@ export function OnboardingOtpScreen() {
     <div className="min-h-screen bg-[#FDFDFE] flex flex-col justify-between selection:bg-blue-600 selection:text-white" id="onboarding-otp-screen">
       
       {/* Top Header */}
-      <header className="w-full py-5 px-6 sm:px-10 flex items-center justify-between border-b border-slate-100 bg-white">
-        <div className="flex items-center gap-3">
-          <SkillGoLogo />
-        </div>
+      <header className="w-full py-5 px-6 sm:px-10 flex items-center justify-end border-b border-slate-100 bg-white">
         <button
           onClick={() => navigate('onboarding-details')}
           className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-full transition-colors cursor-pointer"
@@ -163,13 +160,12 @@ export function OnboardingOtpScreen() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-10">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-10">
+        <div className="w-full max-w-lg mb-6 flex justify-center">
+          <SkillGoLogo size="2xl" />
+        </div>
         <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-9 shadow-sm">
           
-          <div className="mb-6">
-            <SkillGoLogo size="2xl" />
-          </div>
-
           {/* Header Title & Subtitle */}
           <div className="mb-8">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">

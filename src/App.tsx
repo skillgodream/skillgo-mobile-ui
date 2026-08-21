@@ -424,7 +424,7 @@ function AppLayout() {
       {/* 3. APPLE GLASS FLOATING BOTTOM NAVIGATION BAR FOR MOBILE (Screens < 768px) */}
       <nav 
         id="mobile-bottom-nav"
-        className="md:hidden fixed bottom-2.5 left-3 right-3 max-w-lg mx-auto z-40 bg-white/85 backdrop-blur-2xl border border-slate-200 shadow-[0_12px_32px_rgba(0,0,0,0.12)] px-3 py-2 rounded-2xl flex items-center justify-around"
+        className="md:hidden fixed bottom-1.5 left-3 right-3 max-w-lg mx-auto z-40 bg-white/85 backdrop-blur-2xl border border-slate-200 shadow-[0_12px_32px_rgba(0,0,0,0.12)] px-3 py-2 rounded-2xl flex items-center justify-around"
       >
         {/* Tab 1: Home */}
         <button
@@ -825,13 +825,9 @@ function AppLayout() {
                         setOrderHistoryModalOpen(false);
                         setSelectedOrderRecord(null);
                         if (item.productType === 'library') {
-                          navigate('library');
+                          navigate('library-detail', { libraryId: item.productId });
                         } else {
-                          navigate('course-modules', { 
-                            roleId: item.productId, 
-                            skillId: item.skillId || 'logistics-supply-chain', 
-                            plan: item.selectedPlan || 'pro' 
-                          });
+                          navigate('role-detail', { roleId: item.productId });
                         }
                       }}
                       className="bg-white border border-slate-200 rounded-xl p-3.5 hover:border-blue-300 hover:shadow-xs transition-all cursor-pointer flex items-center justify-between gap-3 group"
